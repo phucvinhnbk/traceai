@@ -9271,12 +9271,12 @@ var CODEBANK = [
     ]
   };
   function seenSet(s) { var o = {}; try { (JSON.parse(window.store.get('trace_arena_seen_' + s) || '[]') || []).forEach(function (k) { o[k] = 1; }); } catch (e) {} return o; }
-  function markSeen(s, qs) { try { var a = Object.keys(seenSet(s)); qs.forEach(function (q) { a.push(q.q); }); window.store.set('trace_arena_seen_' + s, JSON.stringify(a.slice(-150))); } catch (e) {} }
+  function markSeen(s, qs) { try { var a = Object.keys(seenSet(s)); qs.forEach(function (q) { a.push(q.title || q.q); }); window.store.set('trace_arena_seen_' + s, JSON.stringify(a.slice(-150))); } catch (e) {} }
   /* Cùng seed + môn (+ ELO trung bình với Tin) → cùng bộ đề ở cả hai máy. */
-  function pick(seed, subject, avoid, avg) {
+  function pick(seed, subject, avoid, avg, nTin) {
     subject = validSubject(subject || SUBJECT);
     var r = rng(seed);
-    if (subject === 'tin') return pickCode(r, avg == null ? 1000 : avg);
+    if (subject === 'tin') return pickCode(r, avg == null ? 1000 : avg, nTin);
     var lvl = LV[subject], bank = (subject === 'en' && ENL[lvl]) || (subject === 'math' ? [] : (BANKS[subject] || BANK)), gens = (subject === 'math' && MG[lvl]) || (subject === 'en' ? [] : (GENS[subject] || [])), nG = gens.length ? (subject === 'math' && MG[lvl] ? QN : subject === 'math' ? 5 : 4) : 0, av = avoid || {};
     var idx = shuffle(bank.map(function (_, i) { return i; }), r), used = {}, items = [];
     var fresh = idx.filter(function (i) { return !av[bank[i][0]]; }); if (fresh.length < QN - nG) fresh = idx;
@@ -9290,11 +9290,16 @@ var CODEBANK = [
     });
   }
   /* ---------- Môn Tin: bài lập trình chạy thật trong trình duyệt ---------- */
-  /* Môn Tin: random 3–4 bài (cùng seed → cùng đề ở hai máy), độ khó theo ELO trung bình */
-  function pickCode(r, avg) {
-    var four = r() < 0.5, k = avg < 900 ? 0 : avg < 1100 ? 1 : avg < 1300 ? 2 : 3;
-    var PL = [[[0,0,1],[0,0,0,1]], [[0,1,1],[0,0,1,1]], [[0,1,2],[0,1,1,2]], [[1,1,2],[1,1,2,2]]];
-    var plan = PL[k][four ? 1 : 0], used = {}, out = [];
+  /* Kế hoạch độ khó theo ELO trung bình: n bài, tăng dần từ dễ đến khó */
+  function codePlan(avg, n) {
+    var k = avg < 900 ? 0 : avg < 1100 ? 1 : avg < 1300 ? 2 : 3, L = [[0,0,0,1,1],[0,0,1,1,1],[0,1,1,2,2],[1,1,2,2,2]][k], out = [];
+    for (var j = 0; j < n; j++) out.push(L[Math.min(4, Math.floor(j * 5 / n))]);
+    return out;
+  }
+  /* Đề dự phòng (bộ cố định) khi chưa có AI: cùng seed → cùng đề ở hai máy */
+  function pickCode(r, avg, n) {
+    n = n || (r() < 0.5 ? 3 : 4);
+    var plan = codePlan(avg, n), used = {}, out = [];
     plan.forEach(function (d) {
       var pool = CODEBANK.filter(function (p) { return p.d === d && !used[p.id]; });
       if (!pool.length) pool = CODEBANK.filter(function (p) { return !used[p.id]; });
@@ -9409,7 +9414,7 @@ var CODEBANK = [
     var ex = q.tests.slice(0, 2).map(function (t, i) { return '<div class="ar-ex"><div><small>Input ' + (i + 1) + '</small><pre>' + esc(stdinOf(t).trim()) + '</pre></div><div><small>Output ' + (i + 1) + '</small><pre>' + esc(expOf(t)) + '</pre></div></div>'; }).join('');
     var L = LANGS[LANG], codes = (G && G.q && G.q.codes) || {}, init = codes[LANG] != null ? codes[LANG] : L.t;
     return '<div class="ar-q"><span class="ar-diff d' + q.d + '">' + ['Dễ', 'Vừa', 'Khó'][q.d] + '</span>' + esc(q.title) + '</div>' +
-      '<div class="ar-stmt">' + esc(q.q) + '<div class="ar-fmt">Nhập từ bàn phím (stdin): mỗi tham số <b>(' + esc(q.args) + ')</b> một dòng; mảng gồm dòng n rồi dòng n phần tử. In kết quả ra màn hình (đúng/sai in YES/NO, mảng in cách nhau dấu cách).</div>' + ex + '</div>' +
+      '<div class="ar-stmt">' + esc(q.q) + '<div class="ar-fmt">' + (q.fmt ? esc(q.fmt).replace(/\n/g, '<br>') : 'Nhập từ bàn phím (stdin): mỗi tham số <b>(' + esc(q.args) + ')</b> một dòng; mảng gồm dòng n rồi dòng n phần tử. In kết quả ra màn hình (đúng/sai in YES/NO, mảng in cách nhau dấu cách).') + '</div>' + ex + '</div>' +
       '<div class="dv"><div class="dv-t"><span id="dv-ti">Dev-C++ 5.11 — [Bài ' + ((G && G.q ? G.q.i : 0) + 1) + '] ' + esc(L.f) + '</span><span class="dv-wc">– ▢ ✕</span></div>' +
       '<div class="dv-m"><span>File</span><span>Edit</span><span>Search</span><span>View</span><span>Project</span><span>Execute</span><span>Tools</span><span>AStyle</span><span>Window</span><span>Help</span></div>' +
       '<div class="dv-tb"><button type="button" class="dv-b" data-act="run" title="Compile &amp; Run (F11)">▶ Compile &amp; Run (F11)</button>' +
@@ -9502,6 +9507,7 @@ var CODEBANK = [
       qo.mine = { k: 0, ok: full, pts: pts };
       g.sc.me += pts; if (full) g.ok++;
       send({ t: 'a', qi: qo.i, pts: pts, ok: full }); sfx(full ? 'ok' : 'bad');
+      if (g.opp.bot) botReact(qo.i, full, el);
       qo.log = logOf(res, q.tests);
       qo.msg = (full ? '✅ Đúng hết ' : '📝 Qua ') + passed + '/' + total + ' test · +' + pts + ' điểm' + (r0.ce ? ' · lỗi biên dịch' : r0.net ? ' · không kết nối được máy chấm' : '') + (auto || g.ending ? ' (hết giờ, tự nộp)' : '');
       if (cur()) {
@@ -9550,15 +9556,9 @@ var CODEBANK = [
     G.t0 = Date.now(); G.fin = false; G.ending = false;
     G.P = G.qs.map(function (_, i) { return { i: i, t0: G.t0, mine: null, opp: G.oppAns[i] || null, adv: true, done: false, codes: {} }; });
     G.cur = 0; G.q = G.P[0];
-    if (G.opp.bot) {
-      G.botPlan = G.qs.map(function (_, i) {
-        var d = QT * (0.15 + Math.random() * 0.7), ok = Math.random() < G.acc, pts = ok ? 100 + Math.round((1 - d / QT) * 50) : 0;
-        later(function () { onOpp({ t: 'a', qi: i, ok: ok, pts: pts }); }, d);
-        return { ok: ok, pts: pts };
-      });
-    }
+    if (G.opp.bot) G.qs.forEach(function (_, i) { botBase(i, QT); });
     body('<div class="ar-sb"><div class="ar-pl me"><div class="av">' + avHtml(prof(ME.u)) + '</div><div class="nm"><span>' + esc(ME.name) + '</span><b id="ar-s-me">0</b></div></div>' +
-      '<div class="ar-mid"><small>' + esc(subjectName(G.subject)) + ' · ' + QN + ' bài · 30 phút</small><div class="ar-ring long" id="ar-tl">30:00</div><span id="ar-st"></span></div>' +
+      '<div class="ar-mid"><small>' + esc(subjectName(G.subject)) + ' · ' + QN + ' bài · ' + Math.round(QT / 60000) + ' phút</small><div class="ar-ring long" id="ar-tl">' + Math.round(QT / 60000) + ':00</div><span id="ar-st"></span></div>' +
       '<div class="ar-pl op"><div class="av">' + (G.opp.bot ? '🤖' : esc(ini(G.opp.name))) + '</div><div class="nm"><span>' + oppName() + '</span><b id="ar-s-op">0</b></div></div></div>' +
       '<div class="ar-tabs" id="ar-tabs"></div>' +
       '<div class="ar-bar"><i id="ar-tb"></i></div><div id="ar-prob"></div>');
@@ -9775,7 +9775,7 @@ var CODEBANK = [
     else if (t === 'inv') {
       if (m.to !== SID || LINKS[m.mid] || (INC && INC.mid === m.mid)) return;
       if (busy() || !m.mid) { lobPost({ t: 'idc', to: m.f }); return; }
-      showInc({ from: m.f, n: String(m.n || 'Người chơi').slice(0, 24), r: m.r | 0, mid: String(m.mid), seed: m.seed >>> 0, subject: validSubject(m.s || 'en'), lv: String(m.l || '') });
+      showInc({ from: m.f, n: String(m.n || 'Người chơi').slice(0, 24), r: m.r | 0, mid: String(m.mid), seed: m.seed >>> 0, subject: validSubject(m.s || 'en'), lv: String(m.l || ''), cn: m.cn, ct: m.ct });
     }
     else if (t === 'icx') { if (INC && INC.from === m.f) hideInc(); }
     else if (t === 'idc') { if (INV && INV.to === m.f) { var nm = INV.name; clearInv(); toast(nm + ' đã từ chối lời mời.'); homeView(); } }
@@ -9834,7 +9834,7 @@ var CODEBANK = [
     var mid = newMid(), seed = (Math.random() * 4294967296) >>> 0;
     var inv = INV = { to: sid, name: p.n, mid: mid, seed: seed, subject: SUBJECT, tm: 0 };
     inviteView(p.n); lobPresence();
-    lobPost({ t: 'inv', to: sid, mid: mid, seed: seed, n: ME.name, r: ME.r, s: SUBJECT });
+    lobPost({ t: 'inv', to: sid, mid: mid, seed: seed, n: ME.name, r: ME.r, s: SUBJECT, cn: CFG.n[SUBJECT], ct: CFG.t[SUBJECT] });
     inv.tm = setTimeout(function () { if (INV === inv) { INV = null; lobPresence(); toast(inv.name + ' không phản hồi lời mời.'); homeView(); } }, 30000);
   }
   function cancelInv() {
@@ -9844,7 +9844,7 @@ var CODEBANK = [
   function showInc(c) {
     hideInc(); INC = c;
     var d = document.createElement('div'); d.id = 'ar-inv'; d.className = 'ar-inv';
-    d.innerHTML = '<div class="ar-invc"><div class="ar-ico">⚔️</div><h4>' + esc(c.n) + ' khiêu chiến bạn!</h4><p class="ar-note" style="margin:0 0 6px">' + SUBJECTS[c.subject].icon + ' ' + esc(subjectName(c.subject)) + ' · ELO ' + c.r + ' · ' + (c.subject === 'tin' ? '3–4 bài lập trình' : QN + ' câu hỏi') + '</p>' +
+    d.innerHTML = '<div class="ar-invc"><div class="ar-ico">⚔️</div><h4>' + esc(c.n) + ' khiêu chiến bạn!</h4><p class="ar-note" style="margin:0 0 6px">' + SUBJECTS[c.subject].icon + ' ' + esc(subjectName(c.subject)) + ' · ELO ' + c.r + ' · ' + cfgText(c.subject, c.cn, c.ct) + '</p>' +
       '<button type="button" class="ar-btn" data-iv="y">Chấp nhận</button><button type="button" class="ar-btn ghost" data-iv="n">Từ chối</button></div>';
     d.addEventListener('click', function (e) {
       var b = e.target.closest('[data-iv]'); if (!b) return;
@@ -9939,7 +9939,7 @@ var CODEBANK = [
     if (!inMatch()) { QN = 7; QT = 15000; }
     var s = stats(ME.u), p = prof(ME.u); ME.name = p.name || ME.name;
     var rk = rankOf(s.r), g = s.w + s.l + s.d, wr = g ? Math.round(s.w / g * 100) : 0;
-    var desc = LVL[SUBJECT] ? lvLabel(SUBJECT, LV[SUBJECT]) + ' · ' + QN + ' câu · ' + (QT / 1000) + ' giây mỗi câu. ' : SUBJECT === 'tin' ? 'Ngẫu nhiên 3–4 bài lập trình · tổng 30 phút, chọn Bài 1, Bài 2… tùy ý · C++ hoặc Python · độ khó theo ELO. ' : QN + ' câu · ' + (QT / 1000) + ' giây mỗi câu. ';
+    var desc = (LVL[SUBJECT] ? lvLabel(SUBJECT, LV[SUBJECT]) + ' · ' : '') + cfgText(SUBJECT, CFG.n[SUBJECT], CFG.t[SUBJECT]) + ' · đề AI soạn mới. ' + (SUBJECT === 'tin' ? 'Chọn Bài 1, Bài 2… tùy ý, C++ hoặc Python, độ khó theo ELO. ' : '');
     body('<div class="ar-wrap"><div class="ar-grid">' +
       '<div class="ar-col"><section class="ar-card"><h2 class="ar-ct c">Thông tin đấu thủ</h2><p class="ar-cs">' + esc(ME.name) + '</p>' +
         '<div class="ar-pav"><div>' + avHtml(p) + '</div><i title="Đang online"></i></div>' +
@@ -9949,7 +9949,7 @@ var CODEBANK = [
           stRow('Tỷ lệ thắng:', '<b class="cy">' + wr + '%</b>') + stRow('Chuỗi thắng:', '🎖️ <b>' + s.st + '</b> <small>(Kỷ lục: ' + s.bs + ')</small>') + '</div></section></div>' +
       '<div class="ar-col"><section class="ar-card"><h4 class="ar-h">Chọn môn thi</h4><div class="ar-subs">' + Object.keys(SUBJECTS).map(function (k) {
           return '<button type="button" class="ar-sub' + (SUBJECT === k ? ' on' : '') + '" data-act="subject" data-subj="' + k + '" aria-pressed="' + (SUBJECT === k ? 'true' : 'false') + '"><span>' + SUBJECTS[k].icon + '</span>' + esc(SUBJECTS[k].name) + '</button>';
-        }).join('') + '</div>' + lvHtml() +
+        }).join('') + '</div>' + lvHtml() + cfgHtml() +
         '<button type="button" class="ar-bolt" data-act="find" aria-label="Ghép trận nhanh">' + BOLT + '</button>' +
         '<div class="ar-pt">Ghép trận nhanh</div><p class="ar-pd">' + desc + 'Nếu có người khác cũng bấm trong vòng ' + (FIND_MS / 1000) + ' giây, hai bạn sẽ được ghép trận. Không có ai, bạn đấu với Bot.</p>' +
         '<div class="ar-onh"><i id="ar-net" class="ar-net wait"></i><span>Đang online — khiêu chiến</span><em id="ar-onc">0</em></div><div id="ar-onl" class="ar-list"></div></section></div>' +
@@ -9994,13 +9994,219 @@ var CODEBANK = [
   }
 
   /* ---------- Trận đấu ---------- */
+  /* ---------- Cấu hình trận: số câu / thời gian ---------- */
+  var NOPT = { tin: ['rnd', 2, 3, 4, 5], en: [5, 7, 10, 15], math: [5, 7, 10, 15] };
+  var TOPT = { tin: [15, 30, 45, 60], en: [10, 15, 20, 30, 45], math: [15, 20, 30, 45, 60] };
+  var CFG = { n: { tin: 'rnd', en: 7, math: 7 }, t: { tin: 30, en: 15, math: 15 } };
+  try {
+    var sc0 = JSON.parse(window.store.get('trace_arena_cfg') || 'null');
+    if (sc0) Object.keys(SUBJECTS).forEach(function (s) {
+      if (sc0.n && NOPT[s].indexOf(sc0.n[s]) >= 0) CFG.n[s] = sc0.n[s];
+      if (sc0.t && TOPT[s].indexOf(sc0.t[s]) >= 0) CFG.t[s] = sc0.t[s];
+    });
+  } catch (e) {}
+  function getCfg(s) { s = validSubject(s); return { n: CFG.n[s], t: CFG.t[s] }; }
+  function setCfg(kind, v) {
+    var o = kind === 'n' ? NOPT[SUBJECT] : TOPT[SUBJECT];
+    if (v !== 'rnd') v = +v;
+    if (o.indexOf(v) < 0) return;
+    (kind === 'n' ? CFG.n : CFG.t)[SUBJECT] = v;
+    try { window.store.set('trace_arena_cfg', JSON.stringify(CFG)); } catch (e) {}
+  }
+  function cfgText(s, n, t) {
+    s = validSubject(s);
+    if (NOPT[s].indexOf(n) < 0) n = CFG.n[s];
+    if (TOPT[s].indexOf(t) < 0) t = CFG.t[s];
+    return s === 'tin' ? (n === 'rnd' ? '3–4' : n) + ' bài · ' + t + ' phút' : n + ' câu · ' + t + ' giây/câu';
+  }
+  function cfgHtml() {
+    var s = SUBJECT, tin = s === 'tin', h = '<div class="ar-h" style="margin:16px 0 8px">';
+    function row(kind, opts, cur, fmt) {
+      return '<div class="ar-lvs">' + opts.map(function (v) {
+        return '<button type="button" class="ar-lv' + (cur === v ? ' on' : '') + '" data-act="' + kind + '" data-v="' + v + '">' + esc(fmt(v)) + '</button>';
+      }).join('') + '</div>';
+    }
+    return h + (tin ? 'Số bài lập trình' : 'Số câu hỏi') + '</div>' + row('cfgn', NOPT[s], CFG.n[s], function (v) { return v === 'rnd' ? 'Ngẫu nhiên 3–4' : String(v); }) +
+      h + (tin ? 'Tổng thời gian (phút)' : 'Thời gian mỗi câu (giây)') + '</div>' + row('cfgt', TOPT[s], CFG.t[s], function (v) { return String(v); }) +
+      '<p class="ar-note" style="margin:10px 0 0;font-size:.82rem">' + (aiReady() ? '🤖 Đề do AI soạn mới mỗi trận.' : '⚠️ Chưa kết nối AI (Cấu hình API) — sẽ dùng đề dự phòng.') + ' Đấu với người thật: cấu hình của chủ phòng (người gửi lời mời) được áp dụng.</p>';
+  }
+
+  /* ---------- AI soạn đề mới mỗi trận (dùng khóa API & model đã cấu hình trong app) ---------- */
+  function aiReady() { try { return !!(CONFIG && CONFIG.apiKey && MODELS && MODELS[CONFIG.selectedModel]); } catch (e) { return false; } }
+  function parseJsonLoose(txt) {
+    txt = String(txt || '').replace(/^\s*```(?:json)?/i, '').replace(/```\s*$/, '').trim();
+    try { return JSON.parse(txt); } catch (e) {}
+    var a = txt.indexOf('{'), b = txt.lastIndexOf('}');
+    if (a >= 0 && b > a) return JSON.parse(txt.slice(a, b + 1));
+    throw new Error('AI không trả về JSON hợp lệ');
+  }
+  /* Gọi riêng, không stream, không dính lịch sử chat */
+  function aiJSON(system, prompt, ms) {
+    var mi = MODELS[CONFIG.selectedModel], ctl = new AbortController(), tm = setTimeout(function () { ctl.abort(); }, ms || 30000), pr;
+    if (mi.provider === 'gemini') {
+      pr = fetch(mi.endpoint + '?key=' + encodeURIComponent(CONFIG.apiKey), {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctl.signal,
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { temperature: 1, maxOutputTokens: 8192, responseMimeType: 'application/json' } })
+      }).then(function (r) { if (!r.ok) throw new Error('AI lỗi ' + r.status); return r.json(); })
+        .then(function (d) { return ((d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts) || []).map(function (x) { return x.text || ''; }).join(''); });
+    } else {
+      pr = fetch(mi.endpoint, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CONFIG.apiKey }, signal: ctl.signal,
+        body: JSON.stringify({ model: mi.model, temperature: 1, max_tokens: 6000, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }] })
+      }).then(function (r) { if (!r.ok) throw new Error('AI lỗi ' + r.status); return r.json(); })
+        .then(function (d) { return (d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) || ''; });
+    }
+    return pr.then(function (txt) { clearTimeout(tm); return parseJsonLoose(txt); }, function (e) { clearTimeout(tm); throw e; });
+  }
+  function pickN(arr, n) { return shuffle(arr.slice(), Math.random).slice(0, n); }
+  function nonce() { return Math.random().toString(36).slice(2, 8); }
+  function noDollar(s) { return String(s).replace(/\$/g, '').trim(); }
+  function topicsFor(subject) {
+    if (subject === 'math') {
+      var g = +LV.math;
+      var T = g <= 3 ? ['cộng trừ trong phạm vi 100–1000', 'bảng nhân chia', 'so sánh và sắp xếp số', 'hình học đơn giản (chu vi, hình vuông, hình chữ nhật)', 'đo lường (độ dài, khối lượng, thời gian)', 'bài toán có lời văn một bước']
+        : g <= 5 ? ['phân số (cộng, trừ, so sánh)', 'số thập phân', 'chu vi và diện tích', 'tỉ số phần trăm', 'chuyển động đều (v, s, t)', 'trung bình cộng', 'bài toán có lời văn hai bước']
+        : g <= 7 ? ['số nguyên và phép tính', 'phân số, tỉ lệ thức', 'biểu thức đại số, rút gọn', 'phương trình bậc nhất một ẩn', 'tam giác, góc', 'tỉ lệ thuận – tỉ lệ nghịch', 'ƯCLN, BCNN']
+        : g <= 9 ? ['hằng đẳng thức, phân tích đa thức', 'hệ phương trình', 'căn bậc hai', 'định lý Pytago, hệ thức lượng', 'hàm số bậc nhất', 'phương trình bậc hai', 'đường tròn']
+        : ['hàm số và đồ thị', 'lượng giác', 'tổ hợp – xác suất', 'cấp số cộng – cấp số nhân', 'mũ – lôgarit', 'đạo hàm', 'tích phân', 'hình học không gian'];
+      return pickN(T, 3);
+    }
+    var E = { a1: ['to be', 'mạo từ a/an/the', 'danh từ số nhiều', 'hiện tại đơn', 'từ vựng gia đình – đồ ăn', 'giới từ chỉ nơi chốn', 'đại từ và tính từ sở hữu'],
+      a2: ['quá khứ đơn', 'so sánh hơn – so sánh nhất', 'tương lai (will / be going to)', 'động từ khuyết thiếu', 'cụm động từ cơ bản', 'đếm được – không đếm được', 'giới từ chỉ thời gian'],
+      b1: ['câu điều kiện loại 1–2', 'câu bị động', 'câu tường thuật', 'mệnh đề quan hệ', 'từ loại (word form)', 'hiện tại hoàn thành', 'gerund – infinitive'],
+      b2: ['câu điều kiện hỗn hợp', 'đảo ngữ', 'collocations', 'từ nối (linking words)', 'cụm động từ nâng cao', 'mệnh đề rút gọn', 'wish / if only'],
+      c1: ['thành ngữ (idioms)', 'sắc thái đồng nghĩa', 'câu chẻ (cleft sentences)', 'đảo ngữ nâng cao', 'collocations học thuật', 'giả định cách (subjunctive)'],
+      c2: ['từ vựng hiếm và sắc thái', 'ngữ pháp tinh tế', 'văn phong trang trọng – thân mật', 'thành ngữ và tục ngữ', 'phân biệt từ dễ nhầm', 'cấu trúc câu phức tạp'] };
+    return pickN(E[LV.en] || E.a1, 3);
+  }
+  function recentAvoid(subject) {
+    return Object.keys(seenSet(subject)).slice(-18).map(function (s) { return String(s).replace(/\s+/g, ' ').slice(0, 70); });
+  }
+  function aiQuestions(subject, n) {
+    var m = n + 2, lvl = LV[subject], av = recentAvoid(subject);
+    var sub = subject === 'math' ? 'Toán lớp ' + lvl + ' (chương trình Việt Nam)' : 'Tiếng Anh trình độ CEFR ' + String(lvl).toUpperCase();
+    var sys = 'Bạn là giáo viên ra đề trắc nghiệm cho đấu trường học sinh Việt Nam. Chỉ trả về JSON hợp lệ, không thêm chữ nào ngoài JSON.';
+    var prompt = 'Soạn ĐÚNG ' + m + ' câu trắc nghiệm MỚI cho môn ' + sub + '.\n' +
+      'Chủ đề (trộn đều, đa dạng dạng câu): ' + topicsFor(subject).join('; ') + '.\n' +
+      'Quy tắc:\n- Mỗi câu có đúng 4 đáp án, chỉ 1 đáp án đúng; các đáp án sai phải hợp lý và khác nhau.\n' +
+      '- Độ khó tăng dần nhưng luôn đúng cấp độ. Kiến thức/tính toán phải CHÍNH XÁC tuyệt đối: hãy tự tính lại đáp án trước khi trả lời.\n' +
+      (subject === 'math' ? '- Viết bằng tiếng Việt, dùng ký hiệu Unicode (², √, ×, ÷, π, ≤, ≥, ½...). TUYỆT ĐỐI không dùng LaTeX và không dùng ký tự $.\n'
+        : '- Câu hỏi và các đáp án viết bằng tiếng Anh (chỗ trống ghi ___). Phần giải thích "why" viết bằng tiếng Việt.\n') +
+      '- "why": 1–2 câu tiếng Việt, nêu đáp án đúng và lý do ngắn gọn.\n' +
+      '- Đặt đáp án đúng ở vị trí NGẪU NHIÊN (c là chỉ số 0–3).\n' +
+      '- Mã làm mới: ' + nonce() + ' — hãy sáng tạo số liệu, tình huống khác với các lần trước.\n' +
+      (av.length ? '- KHÔNG lặp lại hay diễn đạt lại các câu đã ra gần đây:\n' + av.map(function (x) { return '  * ' + x; }).join('\n') + '\n' : '') +
+      'Chỉ trả về JSON đúng dạng: {"questions":[{"q":"...","o":["...","...","...","..."],"c":0,"why":"..."}]}';
+    return aiJSON(sys, prompt, 35000).then(function (d) {
+      var arr = (d && (d.questions || d.items)) || (Array.isArray(d) ? d : []), out = [], seen = {};
+      arr.forEach(function (x) {
+        try {
+          var q = noDollar(x.q || x.question || ''), o = (x.o || x.options || []).map(function (v) { return noDollar(v); }), c = +(x.c != null ? x.c : x.answer);
+          if (q.length < 6 || q.length > 400 || o.length < 4 || !(c >= 0 && c < 4)) return;
+          o = o.slice(0, 4);
+          if (o.some(function (v) { return !v || v.length > 200; })) return;
+          var low = o.map(function (v) { return v.toLowerCase(); });
+          if (low.some(function (v, i) { return low.indexOf(v) !== i; })) return;
+          if (seen[q.toLowerCase()]) return; seen[q.toLowerCase()] = 1;
+          out.push({ q: q, o: shuffle(o.map(function (tx, k) { return { t: tx, c: k === c }; }), Math.random), why: noDollar(x.why || x.explanation || '').slice(0, 400) });
+        } catch (e) {}
+      });
+      return out.slice(0, n);
+    });
+  }
+  var TINTOPICS = ['xử lý chuỗi (đảo, đếm ký tự, đối xứng)', 'mảng: tổng, lớn nhất, nhỏ nhất, đếm theo điều kiện', 'số học: ước, bội, số nguyên tố, chữ số', 'sắp xếp và tìm kiếm', 'mô phỏng tình huống đời thường (tiền, điểm, thời gian)', 'dãy số và quy luật', 'ma trận nhỏ', 'ngăn xếp / ngoặc', 'đếm tần suất', 'hai con trỏ / dãy con liên tiếp'];
+  function runRef(code, inputs) {
+    return Promise.all(inputs.map(function (inp) { return runLocalJS(code, String(inp).replace(/\s+$/, '') + '\n'); }));
+  }
+  /* Chạy lời giải tham chiếu (JS) ngay trên trình duyệt để tự tính đáp án cho từng test */
+  function verifyProb(x, d) {
+    try {
+      var title = noDollar(x.title || '').slice(0, 80), st = String(x.statement || '').trim().slice(0, 1500), sol = String(x.solution_js || '');
+      var fmt = ('Dữ liệu vào: ' + String(x.input_format || '').trim() + '\nKết quả ra: ' + String(x.output_format || '').trim()).slice(0, 700);
+      var ts = (Array.isArray(x.tests) ? x.tests : []).map(function (z) { return String(z); }).slice(0, 8);
+      if (!title || st.length < 20 || sol.length < 10 || ts.length < 3) return Promise.resolve(null);
+      return runRef(sol, ts).then(function (rs) {
+        var tests = [], outs = {};
+        rs.forEach(function (r, i) {
+          var o = String(r && r.out || '').trim();
+          if (r && !r.err && !r.ce && !r.rt && o && o.length < 300 && ts[i].length < 400) { tests.push([[ts[i].replace(/\s+$/, '')], o]); outs[normOut(o)] = 1; }
+        });
+        if (tests.length < 3 || Object.keys(outs).length < 2) return null;
+        return { code: true, d: d, title: title, q: st, args: '', fmt: fmt, tests: tests, why: '', key: 'ai-' + title };
+      });
+    } catch (e) { return Promise.resolve(null); }
+  }
+  function aiCode(n, avg) {
+    var plan = codePlan(avg, n), av = recentAvoid('tin'), D = ['Dễ', 'Vừa', 'Khó'];
+    var sys = 'Bạn là giáo viên tin học ra đề lập trình thi đấu cho học sinh Việt Nam. Chỉ trả về JSON hợp lệ, không thêm chữ nào ngoài JSON.';
+    var prompt = 'Soạn ĐÚNG ' + (n + 1) + ' bài lập trình NGẮN và MỚI bằng tiếng Việt, theo thứ tự độ khó: ' + plan.map(function (d) { return D[d]; }).join(', ') + ' (bài dư cuối cùng mức Vừa).\n' +
+      'Mức độ: Dễ = một vòng lặp hoặc điều kiện đơn giản; Vừa = mảng/chuỗi/số học cơ bản; Khó = thuật toán nhỏ (hai con trỏ, ngăn xếp, đếm tần suất, sắp xếp, quy hoạch động nhỏ).\n' +
+      'Chủ đề gợi ý (mỗi bài một chủ đề khác nhau): ' + pickN(TINTOPICS, n + 1).join('; ') + '.\n' +
+      'Mỗi bài gồm: title, statement (đề rõ ràng, có ràng buộc), input_format, output_format, solution_js, tests.\n' +
+      '- Dữ liệu vào đọc từ stdin theo từng dòng; kết quả in ra stdout (một số, YES/NO, hoặc dãy số cách nhau dấu cách).\n' +
+      '- solution_js: lời giải THAM CHIẾU bằng JavaScript, chỉ dùng readline() (trả về một dòng chuỗi, hoặc null khi hết) và print(x) để in; không dùng require/import. Phải đúng 100% và chạy nhanh.\n' +
+      '- tests: mảng 6 chuỗi DỮ LIỆU VÀO (nhiều dòng ngăn bởi \\n). 2 test đầu nhỏ, dễ hiểu để làm ví dụ; các test còn lại có cả trường hợp biên. CHỈ đưa dữ liệu vào, không đưa đáp án (đáp án do solution_js tính).\n' +
+      '- Đề phải cho đáp án duy nhất; số liệu nhỏ (n ≤ 20, giá trị ≤ 1000).\n' +
+      '- Mã làm mới: ' + nonce() + ' — hãy sáng tạo ngữ cảnh khác lần trước.\n' +
+      (av.length ? '- KHÔNG trùng các bài đã ra gần đây: ' + av.slice(-10).join('; ') + '\n' : '') +
+      'Chỉ trả về JSON đúng dạng: {"problems":[{"title":"","statement":"","input_format":"","output_format":"","solution_js":"","tests":["...","..."]}]}';
+    return aiJSON(sys, prompt, 55000).then(function (d) {
+      var arr = ((d && d.problems) || []).slice(0, n + 1);
+      return Promise.all(arr.map(function (x, i) { return verifyProb(x, plan[i] != null ? plan[i] : 1); })).then(function (r) { return r.filter(Boolean).slice(0, n); });
+    });
+  }
+  /* Chủ phòng (hoặc người chơi đấu Bot) soạn đề: AI trước, thiếu thì bù bằng bộ dự phòng */
+  function genQuestions(subject, cfg, seed, avgR) {
+    var n = cfg.n === 'rnd' ? (Math.random() < 0.5 ? 3 : 4) : cfg.n;
+    var tm = subject === 'tin' ? cfg.t * 60000 : cfg.t * 1000;
+    function fill(have) {
+      if (have.length >= n) return have;
+      var av = seenSet(subject); have.forEach(function (q) { av[q.q] = 1; });
+      QN = n;
+      var keys = {}; have.forEach(function (q) { keys[q.title || q.q] = 1; });
+      pick(seed, subject, av, avgR, n).forEach(function (q) { if (have.length < n && !keys[q.title || q.q]) { keys[q.title || q.q] = 1; have.push(q); } });
+      return have;
+    }
+    var pr = aiReady() ? (subject === 'tin' ? aiCode(n, avgR) : aiQuestions(subject, n)) : Promise.resolve([]);
+    return pr.catch(function (e) { try { console.warn('AI soạn đề lỗi:', e); } catch (x) {} return []; }).then(function (got) {
+      var qs = fill(got.slice());
+      if (subject === 'tin') qs.sort(function (a, b) { return a.d - b.d; });
+      return { qs: qs, ai: got.length > 0, n: qs.length, tm: tm };
+    });
+  }
+  function sStr(v, n) { return String(v == null ? '' : v).slice(0, n); }
+  /* Đề nhận từ chủ phòng: kiểm tra chặt trước khi dùng */
+  function cleanRes(subject, m) {
+    try {
+      var qs = m && m.qs; if (!Array.isArray(qs) || !qs.length || qs.length > 10) return null;
+      var out = [];
+      for (var i = 0; i < qs.length; i++) {
+        var x = qs[i];
+        if (subject === 'tin') {
+          var ts = Array.isArray(x.tests) ? x.tests.slice(0, 10).filter(function (z) { return Array.isArray(z) && Array.isArray(z[0]); }) : [];
+          if (!ts.length || JSON.stringify(ts).length > 20000) return null;
+          out.push({ code: true, d: Math.max(0, Math.min(2, x.d | 0)), title: sStr(x.title, 80), q: sStr(x.q, 1500), args: sStr(x.args, 60), fmt: sStr(x.fmt, 700), tests: ts, why: '', key: sStr(x.key, 60) });
+        } else {
+          var o = Array.isArray(x.o) ? x.o.slice(0, 4).map(function (z) { return { t: sStr(z && z.t, 200), c: !!(z && z.c) }; }) : [];
+          if (o.length !== 4 || o.filter(function (z) { return z.c; }).length !== 1) return null;
+          out.push({ q: sStr(x.q, 400), o: o, why: sStr(x.why, 400) });
+        }
+      }
+      var tm = +m.tm; tm = isFinite(tm) ? Math.max(5000, Math.min(subject === 'tin' ? 3600000 : 90000, tm)) : (subject === 'tin' ? 1800000 : 15000);
+      return { qs: out, ai: !!m.ai, n: out.length, tm: tm };
+    } catch (e) { return null; }
+  }
+  function localFallback(g) {
+    var cfg = getCfg(g.subject); QN = cfg.n === 'rnd' ? 4 : cfg.n;
+    return { qs: pick(g.seed, g.subject, null, g.avgR), ai: false, tm: g.subject === 'tin' ? cfg.t * 60000 : cfg.t * 1000 };
+  }
+
+  /* ---------- Trận đấu ---------- */
   function beginMatch(seed, opp, link, subject) {
-    var matchSubject = validSubject(subject || SUBJECT), avgR = Math.round(((ME.r | 0) + (opp.r | 0)) / 2);
-    var qsPicked = pick(seed, matchSubject, link ? null : seenSet(matchSubject), avgR);
-    QN = matchSubject === 'tin' ? qsPicked.length : 7; QT = matchSubject === 'tin' ? 1800000 : 15000;
-    G = { subject: matchSubject, qs: qsPicked, opp: opp, link: link, qi: -1, q: null, sc: { me: 0, opp: 0 }, ok: 0, oppAns: {}, oppFin: null, over: false, waiting: false, timers: [], tick: 0, acc: 0.35 + Math.random() * 0.10 };
-    var g = G;
-    if (!link && matchSubject !== 'tin') markSeen(matchSubject, G.qs);
+    var matchSubject = validSubject(subject || SUBJECT), avgR = Math.round(((ME.r | 0) + (opp.r | 0)) / 2), cfg = getCfg(matchSubject);
+    QN = matchSubject === 'tin' ? 3 : cfg.n; QT = matchSubject === 'tin' ? cfg.t * 60000 : cfg.t * 1000;
+    G = { subject: matchSubject, qs: [], opp: opp, link: link, qi: -1, q: null, sc: { me: 0, opp: 0 }, ok: 0, oppAns: {}, oppFin: null, over: false, waiting: false, timers: [], tick: 0, acc: 0.35 + Math.random() * 0.10, ready: false, botT: {}, seed: seed, avgR: avgR };
+    var g = G, host = !link || link.role === 'host';
     hideInc(); lobPresence();
     if (link) {
       link.conn.on('data', function (m) { if (G === g) onOpp(m); });
@@ -10008,9 +10214,49 @@ var CODEBANK = [
     }
     G.dots = [];
     body('<div class="ar-find"><div class="ar-sb" style="margin-bottom:6px"><div class="ar-pl me"><div class="av">' + avHtml(prof(ME.u)) + '</div><div class="nm"><span>Bạn</span><b style="font-size:1.05rem">' + esc(ME.name) + '</b></div></div><div class="ar-mid"><b style="font-size:1.6rem;opacity:.7">VS</b></div><div class="ar-pl op"><div class="av">' + (opp.bot ? '🤖' : esc(ini(opp.name))) + '</div><div class="nm"><span>' + (opp.bot ? 'Bot' : 'Đối thủ') + '</span><b style="font-size:1.05rem">' + esc(opp.name) + '</b></div></div></div>' +
-      '<p style="margin-top:14px">Môn ' + esc(subjectName(matchSubject)) + ' · ' + QN + (matchSubject === 'tin' ? ' bài lập trình · 30 phút' : ' câu') + ' · chuẩn bị, trận đấu sắp bắt đầu!</p></div>');
-    later(nextQ, 1800);
+      '<div class="ar-spin" style="margin:14px auto 6px"></div><p id="ar-prep" style="margin-top:6px">Môn ' + esc(subjectName(matchSubject)) + ' · ' + (host ? (aiReady() ? '🤖 AI đang soạn đề mới cho trận này…' : 'đang chuẩn bị đề…') : 'chủ phòng đang chuẩn bị đề…') + '</p></div>');
+    if (host) {
+      genQuestions(matchSubject, cfg, seed, avgR).then(function (res) {
+        if (G !== g || g.over || g.ready) return;
+        if (link) send({ t: 'cfg', qs: res.qs, tm: res.tm, ai: res.ai });
+        startGame(res);
+      });
+    } else {
+      g.cfgT = later(function () { if (G === g && !g.ready) startGame(localFallback(g)); }, 60000);
+    }
   }
+  function startGame(res) {
+    var g = G; if (!g || g.over || g.ready) return;
+    g.ready = true; clearTimeout(g.cfgT);
+    g.qs = res.qs; g.ai = !!res.ai; QN = g.qs.length; QT = res.tm;
+    markSeen(g.subject, g.qs);
+    var sp = document.querySelector('#arena-body .ar-spin'); if (sp) sp.style.display = 'none';
+    var pr = $('ar-prep');
+    if (pr) pr.textContent = 'Môn ' + subjectName(g.subject) + ' · ' + QN + (g.subject === 'tin' ? ' bài · ' + Math.round(QT / 60000) + ' phút' : ' câu · ' + Math.round(QT / 1000) + ' giây/câu') + (g.ai ? ' · đề do AI soạn' : ' · đề dự phòng') + ' — bắt đầu!';
+    later(nextQ, 1600);
+  }
+  /* ---------- Bot: "đối ngược nhẹ" với người chơi ---------- */
+  function clampF(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  /* Phương án dự phòng: bot tự trả lời muộn nếu người chơi chưa kịp trả lời */
+  function botBase(i, span) {
+    var g = G; if (!g || !g.opp.bot) return;
+    var d = span * (0.55 + Math.random() * 0.35), ok = Math.random() < g.acc, pts = ok ? 100 + Math.round((1 - d / span) * 50) : 0;
+    (g.botPlan = g.botPlan || [])[i] = { ok: ok, pts: pts };
+    g.botT[i] = later(function () { onOpp({ t: 'a', qi: i, ok: ok, pts: pts }); }, d);
+  }
+  /* Người chơi sai → bot dễ đúng hơn (và ngược lại); người chơi nhanh → bot chậm hơn (và ngược lại);
+     ai đang bỏ xa thì bot được nhích nhẹ để trận luôn căng. */
+  function botReact(i, plOk, elMs) {
+    var g = G; if (!g || !g.opp.bot || g.over || g.oppAns[i]) return;
+    clearTimeout(g.botT[i]);
+    var span = QT, frac = clampF(elMs / span, 0, 1), diff = g.sc.me - sumOpp();
+    var pOk = (plOk ? 0.38 : 0.68) + clampF(diff / 500, -0.12, 0.12);
+    var f = frac < 0.35 ? 0.45 + Math.random() * 0.45 : frac > 0.65 ? 0.12 + Math.random() * 0.3 : 0.2 + Math.random() * 0.6;
+    var ok = Math.random() < pOk, pts = ok ? 100 + Math.round((1 - f) * 50) : (g.subject === 'tin' && Math.random() < 0.3 ? 40 : 0);
+    (g.botPlan = g.botPlan || [])[i] = { ok: ok, pts: pts };
+    g.botT[i] = later(function () { onOpp({ t: 'a', qi: i, ok: ok, pts: pts }); }, Math.max(700, f * span - elMs));
+  }
+
   function send(m) { if (G && G.link) { try { G.link.conn.send(m); } catch (e) {} } }
 
   function oppName() { return esc(G.opp.name) + (G.opp.bot ? ' 🤖' : ''); }
@@ -10039,10 +10285,7 @@ var CODEBANK = [
     if (G.qi >= QN) return finishMine();
     var i = G.qi, q = G.qs[i];
     G.q = { i: i, t0: Date.now(), mine: null, opp: G.oppAns[i] || null, adv: false, done: false };
-    if (G.opp.bot) {
-      var d = G.subject === 'tin' ? 60000 + Math.random() * 90000 : 6500 + Math.random() * 7000, ok = Math.random() < G.acc;
-      later(function () { onOpp({ t: 'a', qi: i, ok: ok, pts: ok ? 100 + Math.round((1 - d / QT) * 50) : 0 }); }, d);
-    }
+    if (G.opp.bot) botBase(i, QT);
     G.dots = G.dots || [];
     body('<div class="ar-sb"><div class="ar-pl me"><div class="av">' + avHtml(prof(ME.u)) + '</div><div class="nm"><span>' + esc(ME.name) + '</span><b id="ar-s-me">0</b></div></div>' +
       '<div class="ar-mid"><small>' + esc(subjectName(G.subject)) + ' · ' + (G.subject === 'tin' ? 'Bài ' : 'Câu ') + (i + 1) + '/' + QN + '</small><div class="ar-ring" id="ar-tl">' + (QT / 1000) + 's</div><span id="ar-st"></span></div>' +
@@ -10081,6 +10324,7 @@ var CODEBANK = [
     G.dots[G.q.i] = c ? 'ok' : 'bad'; var dt = $('ar-dot-' + G.q.i); if (dt) dt.className = c ? 'ok' : 'bad';
     G.sc.me += pts; if (c) G.ok++;
     send({ t: 'a', qi: G.q.i, pts: pts, ok: c }); sfx(c ? 'ok' : 'bad');
+    if (G.opp.bot) botReact(G.q.i, c, k < 0 ? QT : el);
     var btns = document.querySelectorAll('#ar-opts .ar-opt');
     Array.prototype.forEach.call(btns, function (b, idx) {
       b.disabled = true;
@@ -10109,6 +10353,8 @@ var CODEBANK = [
       G.oppAns[qi] = { pts: Math.max(0, Math.min(150, m.pts | 0)), ok: !!m.ok };
       if (G.subject === 'tin') { if (G.P && G.P[qi]) G.P[qi].opp = G.oppAns[qi]; updScores(); return; }
       if (G.q && G.q.i === qi && !G.q.opp) { G.q.opp = G.oppAns[qi]; checkAdv(); }
+    } else if (m.t === 'cfg') {
+      if (!G.ready && G.link && G.link.role === 'guest') startGame(cleanRes(G.subject, m) || localFallback(G));
     } else if (m.t === 'fin') {
       G.oppFin = Math.max(0, Math.min(QN * 150, m.score | 0));
       if (G.waiting) finalize(G.oppFin);
@@ -10227,6 +10473,7 @@ var CODEBANK = [
     else if (a === 'tab') { LOBTAB = b.getAttribute('data-tab') || 'on'; renderSide(); }
     else if (a === 'login') { close(); var ab = $('acct-btn'); if (ab) ab.click(); }
     else if (a === 'ans') lock(parseInt(b.getAttribute('data-k'), 10));
+    else if (a === 'cfgn' || a === 'cfgt') { if (F || INV || INC || inMatch()) return; setCfg(a === 'cfgn' ? 'n' : 't', b.getAttribute('data-v')); homeView(); }
     else if (a === 'ptab') tinShow(parseInt(b.getAttribute('data-i'), 10));
     else if (a === 'run') runCode();
     else if (a === 'submit') submitCode(false);
