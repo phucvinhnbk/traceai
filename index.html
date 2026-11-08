@@ -8751,6 +8751,10 @@ html[data-theme="dark"]:not([data-skin]) #acct-modal .ac-who{background:#0f172a}
 #arena-modal .ar-sub{display:inline-flex;align-items:center;gap:8px;padding:clamp(8px,.9vw,14px) clamp(14px,1.4vw,26px);border-radius:20px;border:2px solid rgba(34,211,238,.28);background:rgba(255,255,255,.04);color:var(--txt);font-weight:800;font-size:clamp(.85rem,1.2vw,1.2rem);cursor:pointer;transition:border-color .15s,background .15s,transform .15s}
 #arena-modal .ar-sub:hover{transform:translateY(-2px);background:var(--card2)}
 #arena-modal .ar-sub.on{border-color:#22d3ee;background:rgba(34,211,238,.14);box-shadow:0 0 18px rgba(34,211,238,.3)}
+#arena-modal .ar-lvs{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;padding-bottom:6px}
+#arena-modal .ar-lv{min-width:clamp(40px,3.4vw,58px);padding:7px 12px;border-radius:14px;border:2px solid rgba(34,211,238,.28);background:rgba(255,255,255,.04);color:var(--txt);font-weight:800;font-size:clamp(.8rem,1.05vw,1.05rem);cursor:pointer}
+#arena-modal .ar-lv:hover{background:var(--card2)}
+#arena-modal .ar-lv.on{border-color:#22d3ee;background:rgba(34,211,238,.18);box-shadow:0 0 14px rgba(34,211,238,.3)}
 #arena-modal .ar-bolt{display:flex;align-items:center;justify-content:center;width:clamp(150px,15vw,290px);aspect-ratio:1;margin:clamp(16px,2.4vw,40px) auto 14px;border-radius:50%;border:0;padding:0;cursor:pointer;background:radial-gradient(circle,#1a1038 0 70%,#fbbf24 72%,#f97316 81%,#c2410c 91%,transparent 92%);box-shadow:0 0 60px rgba(249,115,22,.5),0 0 120px rgba(249,115,22,.22);animation:arGlow 2.6s ease-in-out infinite;transition:transform .2s}
 #arena-modal .ar-bolt:hover{transform:scale(1.05)}
 #arena-modal .ar-bolt:active{transform:scale(.97)}
@@ -8833,6 +8837,13 @@ html[data-theme="dark"]:not([data-skin]) #acct-modal .ac-who{background:#0f172a}
 #arena-modal .ar-bar{height:8px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin-bottom:16px}
 #arena-modal .ar-bar i{display:block;height:100%;width:100%;border-radius:99px;background:linear-gradient(90deg,var(--t),var(--p))}
 #arena-modal .ar-bar i.low{background:#ef4444}
+#arena-modal .ar-ring.long{width:86px;border-radius:30px;font-size:1rem}
+#arena-modal .ar-tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:12px}
+#arena-modal .ar-tab{min-width:92px;padding:8px 16px;border-radius:14px;border:2px solid rgba(34,211,238,.28);background:rgba(255,255,255,.04);color:var(--txt);font-weight:800;font-size:.95rem;cursor:pointer}
+#arena-modal .ar-tab:hover{background:var(--card2)}
+#arena-modal .ar-tab.on{border-color:#22d3ee;background:rgba(34,211,238,.18);box-shadow:0 0 14px rgba(34,211,238,.3)}
+#arena-modal .ar-tab.ok{border-color:var(--ok)}
+#arena-modal .ar-tab.bad{border-color:var(--bad)}
 #arena-modal .ar-q{font-weight:800;font-size:clamp(1.05rem,2.4vw,1.35rem);line-height:1.5;margin-bottom:16px}
 #arena-modal .ar-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 #arena-modal .ar-opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 14px;border-radius:16px;border:1.5px solid var(--line);background:rgba(255,255,255,.05);color:var(--txt);font-weight:700;font-size:.95rem;cursor:pointer;transition:border-color .15s,background .15s,transform .15s}
@@ -9098,6 +9109,98 @@ html[data-theme="dark"]:not([data-skin]) #acct-modal .ac-who{background:#0f172a}
   };
   function validSubject(subject) { return SUBJECTS[subject] ? subject : 'en'; }
   function subjectName(subject) { return SUBJECTS[validSubject(subject)].name; }
+
+  /* ---------- Cấp độ: Toán lớp 1–12, Tiếng Anh A1–C2 ---------- */
+  var LVL = { math: ['1','2','3','4','5','6','7','8','9','10','11','12'], en: ['a1','a2','b1','b2','c1','c2'] };
+  var LV = { math: '6', en: 'a1' };
+  try { Object.keys(LV).forEach(function (s) { var v = window.store.get('trace_arena_lv_' + s); if (v && LVL[s].indexOf(String(v)) >= 0) LV[s] = String(v); }); } catch (e) {}
+  function setLv(s, l) { l = String(l); if (LVL[s] && LVL[s].indexOf(l) >= 0) { LV[s] = l; try { window.store.set('trace_arena_lv_' + s, l); } catch (e) {} } }
+  function lvLabel(s, l) { return s === 'math' ? 'Lớp ' + l : s === 'en' ? String(l).toUpperCase() : ''; }
+  function sameLv(m, s) { return !LV[s] || String(m.l || '') === String(LV[s]); }
+  function lvHtml() {
+    var h = '<div class="ar-h" style="margin:16px 0 8px">';
+    if (SUBJECT === 'tin') return h + 'Ngôn ngữ lập trình</div><div class="ar-lvs">' + ['cpp', 'py'].map(function (k) {
+      return '<button type="button" class="ar-lv' + (LANG === k ? ' on' : '') + '" data-act="lang" data-lang="' + k + '">' + esc(LANGS[k].n) + '</button>'; }).join('') + '</div>';
+    var L = LVL[SUBJECT]; if (!L) return '';
+    return h + (SUBJECT === 'math' ? 'Chọn lớp' : 'Chọn trình độ') + '</div><div class="ar-lvs">' + L.map(function (k) {
+      return '<button type="button" class="ar-lv' + (LV[SUBJECT] === k ? ' on' : '') + '" data-act="level" data-lv="' + k + '">' + (SUBJECT === 'math' ? k : k.toUpperCase()) + '</button>'; }).join('') + '</div>';
+  }
+  function sg(n) { return n < 0 ? '−' + (-n) : String(n); }
+  function dc(v) { return String(v).replace('.', ','); }
+  var SUBL = { 2: '₂', 3: '₃', 5: '₅', 10: '₁₀' };
+  var TRG = [['sin 30°','1/2'],['cos 60°','1/2'],['sin 90°','1'],['cos 0°','1'],['tan 45°','1'],['cos 90°','0'],['sin 0°','0'],['sin 45°','√2/2'],['cos 30°','√3/2'],['tan 30°','√3/3'],['tan 60°','√3'],['cos 45°','√2/2']];
+  var TRV = ['0','1/2','1','√2/2','√3/2','√3/3','√3'];
+  var MG = {
+    '1': [
+      function (r) { var a = ri(r,1,9), b = ri(r,1,10); return ['Tính: ' + a + ' + ' + b + ' = ?', uo(a+b, [a+b+1, a+b-1, a+b+2]), 0, a + ' cộng ' + b + ' bằng ' + (a+b) + '.']; },
+      function (r) { var a = ri(r,5,20), b = ri(r,1,a-1); return ['Tính: ' + a + ' − ' + b + ' = ?', uo(a-b, [a-b+1, a-b-1, a+b]), 0, a + ' trừ ' + b + ' bằng ' + (a-b) + '.']; },
+      function (r) { var n = ri(r,10,98); return ['Số liền sau của ' + n + ' là số nào?', uo(n+1, [n-1, n+2, n+10]), 0, 'Số liền sau hơn số đã cho 1 đơn vị: ' + (n+1) + '.']; }
+    ],
+    '2': [
+      function (r) { var a = pk(r,[2,3,4,5]), b = ri(r,1,10); return ['Tính: ' + a + ' × ' + b + ' = ?', uo(a*b, [a+b, a*b+a, a*b-a]), 0, a + ' × ' + b + ' = ' + a*b + '.']; },
+      function (r) { var a = ri(r,15,49), b = ri(r,15,49); return ['Tính: ' + a + ' + ' + b + ' = ?', uo(a+b, [a+b+10, a+b-10, a+b+1]), 0, a + ' + ' + b + ' = ' + (a+b) + '.']; },
+      function (r) { var a = ri(r,3,30), x = ri(r,3,30); return ['Tìm x, biết: x + ' + a + ' = ' + (a+x), uo(x, [a+x, x+1, x-1]), 0, 'x = ' + (a+x) + ' − ' + a + ' = ' + x + '.']; }
+    ],
+    '3': [
+      function (r) { var a = ri(r,2,9), b = ri(r,2,9); return ['Tính: ' + a + ' × ' + b + ' = ?', uo(a*b, [a*b+a, a*b-b, a+b]), 0, a + ' × ' + b + ' = ' + a*b + '.']; },
+      function (r) { var b = ri(r,2,9), q = ri(r,2,9); return ['Tính: ' + b*q + ' ÷ ' + b + ' = ?', uo(q, [q+1, q-1, b]), 0, b + ' × ' + q + ' = ' + b*q + ' nên ' + b*q + ' ÷ ' + b + ' = ' + q + '.']; },
+      function (r) { var s = ri(r,3,20); return ['Hình vuông có cạnh ' + s + ' cm. Chu vi là bao nhiêu (cm)?', uo(s*4, [s*2, s*s, s*3]), 0, 'Chu vi = 4 × ' + s + ' = ' + s*4 + ' cm.']; }
+    ],
+    '4': [
+      function (r) { var a = ri(r,100,499), b = ri(r,2,9), v = a*b; return ['Tính: ' + a + ' × ' + b + ' = ?', uo(v, [v+100, v-10, v+a]), 0, a + ' × ' + b + ' = ' + v + '.']; },
+      function (r) { var d = pk(r,[5,6,8,10,12]), a = ri(r,1,d-2), c = ri(r,1,d-2), s = fr(a+c,d); return ['Tính: ' + a + '/' + d + ' + ' + c + '/' + d + ' = ? (rút gọn)', uo(s, [fr(a+c,2*d), fr(a*c,d), fr(a+c+1,d), fr(a+c+2,d), fr(a+c,d+2)]), 0, 'Cùng mẫu: cộng tử, giữ mẫu: ' + (a+c) + '/' + d + ' = ' + s + '.']; },
+      function (r) { var l = ri(r,6,25), w = ri(r,2,l-1); return ['Hình chữ nhật dài ' + l + ' cm, rộng ' + w + ' cm. Diện tích là bao nhiêu (cm²)?', uo(l*w, [2*(l+w), l+w, l*w+l]), 0, 'S = ' + l + ' × ' + w + ' = ' + l*w + ' cm².']; }
+    ],
+    '5': [
+      function (r) { var x = ri(r,11,99), y = ri(r,11,99), s = (x+y)/10; return ['Tính: ' + dc(x/10) + ' + ' + dc(y/10) + ' = ?', [dc(s), dc(s+1), dc(s-1), dc(s/10)], 0, 'Cộng thẳng hàng: ' + dc(s) + '.']; },
+      function (r) { var p = pk(r,[10,20,25,50]), n = ri(r,2,20)*20, v = p*n/100; return [p + '% của ' + n + ' bằng bao nhiêu?', uo(v, [n-v, v+p, v*2]), 0, p + '% × ' + n + ' = ' + v + '.']; },
+      function (r) { var v = ri(r,6,16)*5, t = ri(r,2,5); return ['Một xe đi với vận tốc ' + v + ' km/h trong ' + t + ' giờ. Quãng đường là bao nhiêu km?', uo(v*t, [v+t, v*t+v, v*t-v]), 0, 's = v × t = ' + v + ' × ' + t + ' = ' + v*t + ' km.']; }
+    ],
+    '6': [
+      function (r) { var a = ri(r,2,9), b = a + ri(r,1,8); return ['Tính: (−' + a + ') + ' + b + ' = ?', uo(sg(b-a), [sg(a+b), sg(a-b), sg(-(a+b))]), 0, b + ' − ' + a + ' = ' + (b-a) + '.']; },
+      function (r) { var d = pk(r,[3,4,5,6,8]), k = ri(r,2,9), a = ri(r,1,d-1), n = d*k; return [a + '/' + d + ' của ' + n + ' bằng bao nhiêu?', uo(a*k, [k, a*k+a, n-a]), 0, n + ' ÷ ' + d + ' × ' + a + ' = ' + a*k + '.']; },
+      function (r) { var g = ri(r,2,6), a = g*ri(r,2,5), b = g*ri(r,2,5); if (a === b) b += g; var d = gcdN(a,b); return ['ƯCLN(' + a + ', ' + b + ') bằng bao nhiêu?', uo(d, [a*b/d, d*2, Math.abs(a-b)+d]), 0, 'Ước chung lớn nhất của ' + a + ' và ' + b + ' là ' + d + '.']; }
+    ],
+    '7': [
+      function (r) { var x = ri(r,2,12), a = ri(r,2,9), b = ri(r,1,20), c = a*x+b; return ['Giải phương trình: ' + a + 'x + ' + b + ' = ' + c + '.', uo('x = ' + x, ['x = ' + (x+1), 'x = ' + (x-1), 'x = ' + (c-b)]), 0, a + 'x = ' + (c-b) + ' nên x = ' + x + '.']; },
+      function (r) { var p = ri(r,3,9), q = ri(r,2,9), t = ri(r,1,p+q-1), s = p+q-t; return ['Rút gọn: ' + p + 'a + ' + q + 'a − ' + t + 'a.', [s + 'a', (s-1) + 'a', (p+q) + 'a', (p+q+t) + 'a'], 0, 'Gộp hạng tử đồng dạng: (' + p + ' + ' + q + ' − ' + t + ')a = ' + s + 'a.']; },
+      function (r) { var k = ri(r,2,5), x = ri(r,1,9), a = ri(r,2,9); return ['Giải: ' + k + '(x + ' + a + ') = ' + k*(x+a) + '.', ['x = ' + x, 'x = ' + (x+a), 'x = ' + (x+1), 'x = ' + (x-1)], 0, 'Chia hai vế cho ' + k + ': x + ' + a + ' = ' + (x+a) + ' nên x = ' + x + '.']; }
+    ],
+    '8': [
+      function (r) { var k = ri(r,2,9); return ['Phân tích x² − ' + k*k + ' thành nhân tử.', uo('(x − ' + k + ')(x + ' + k + ')', ['(x − ' + k + ')²', '(x − ' + k*k + ')(x + 1)', 'x(x − ' + k + ')']), 0, 'Hiệu hai bình phương: a² − b² = (a − b)(a + b).']; },
+      function (r) { var a = ri(r,1,6), b = a + ri(r,1,3); return ['Khai triển: (x + ' + a + ')(x + ' + b + ').', ['x² + ' + (a+b) + 'x + ' + a*b, 'x² + ' + a*b + 'x + ' + (a+b), 'x² + ' + (a+b) + 'x + ' + (a+b), 'x² + ' + (a+b) + 'x − ' + a*b], 0, 'Nhân phân phối: x² + (' + a + ' + ' + b + ')x + ' + a + '·' + b + '.']; },
+      function (r) { var t = pk(r,TRI), a = t[0], b = t[1], c = t[2]; return ['Tam giác vuông có hai cạnh góc vuông ' + a + ' cm và ' + b + ' cm. Cạnh huyền bằng bao nhiêu?', uo(c + ' cm', [(a+b) + ' cm', (c+1) + ' cm', (c-1) + ' cm']), 0, 'Pythagore: c² = ' + (a*a+b*b) + ' nên c = ' + c + ' cm.']; }
+    ],
+    '9': [
+      function (r) { var k = ri(r,3,15); return ['Tính: √' + k*k + ' = ?', uo(k, [k+1, k-1, 2*k]), 0, k + '² = ' + k*k + '.']; },
+      function (r) { var a = ri(r,1,6), b = a + ri(r,1,5); return ['Nghiệm của phương trình x² − ' + (a+b) + 'x + ' + a*b + ' = 0 là:', ['x = ' + a + ' hoặc x = ' + b, 'x = −' + a + ' hoặc x = −' + b, 'x = ' + a + ' hoặc x = −' + b, 'x = −' + a + ' hoặc x = ' + b], 0, 'Phân tích (x − ' + a + ')(x − ' + b + ') = 0 (hoặc dùng Vi-ét: tổng ' + (a+b) + ', tích ' + a*b + ').']; },
+      function (r) { var x = ri(r,2,9), y = ri(r,1,x-1); return ['Hệ phương trình x + y = ' + (x+y) + ' và x − y = ' + (x-y) + '. Giá trị của x là?', uo(x, [y, x+1, x-1]), 0, 'Cộng hai phương trình: 2x = ' + 2*x + ' nên x = ' + x + '.']; }
+    ],
+    '10': [
+      function (r) { var a = ri(r,1,4), p = ri(r,1,6), c = ri(r,1,9); return ['Hoành độ đỉnh của parabol y = ' + a + 'x² − ' + 2*a*p + 'x + ' + c + ' là:', uo(p, [-p, 2*p, p+1]), 0, 'x = −b/(2a) = ' + 2*a*p + '/' + 2*a + ' = ' + p + '.']; },
+      function (r) { var t = pk(r,TRG); return ['Giá trị của ' + t[0] + ' là:', [t[1]].concat(others(r, TRV, [t[1]], 3)), 0, t[0] + ' = ' + t[1] + '.']; },
+      function (r) { var n = ri(r,5,12), c = n*(n-1)/2; return ['Số cách chọn 2 học sinh từ nhóm ' + n + ' học sinh là:', uo(c, [n*(n-1), c+n, 2*n]), 0, 'C(' + n + ',2) = ' + n + '·' + (n-1) + '/2 = ' + c + '.']; }
+    ],
+    '11': [
+      function (r) { var u = ri(r,1,9), d = ri(r,2,6), n = ri(r,5,15), v = u+(n-1)*d; return ['Cấp số cộng có u₁ = ' + u + ', công sai d = ' + d + '. Số hạng u' + n + ' bằng:', uo(v, [u+n*d, u+(n-2)*d, n*d]), 0, 'uₙ = u₁ + (n − 1)d = ' + u + ' + ' + (n-1) + '×' + d + ' = ' + v + '.']; },
+      function (r) { var a = pk(r,[2,3,5,10]), k = ri(r,2,6); return ['Tính: log' + SUBL[a] + ' ' + Math.pow(a,k) + ' = ?', uo(k, [k+1, k-1, a]), 0, a + '^' + k + ' = ' + Math.pow(a,k) + ' nên log = ' + k + '.']; },
+      function (r) { var n = ri(r,2,6), v = n*Math.pow(2,n-1); return ['Đạo hàm của f(x) = x^' + n + ' tại x = 2 bằng:', uo(v, [Math.pow(2,n), n*Math.pow(2,n), (n-1)*Math.pow(2,n-1)]), 0, "f'(x) = " + n + 'x^' + (n-1) + ' nên f\'(2) = ' + v + '.']; }
+    ],
+    '12': [
+      function (r) { var a = ri(r,1,5), b = ri(r,1,9), x = ri(r,1,5), c = ri(r,1,9), v = 2*a*x+b; return ['Đạo hàm của f(x) = ' + a + 'x² + ' + b + 'x + ' + c + ' tại x = ' + x + ' bằng:', uo(v, [a*x+b, 2*a*x, a*x*x+b*x+c]), 0, "f'(x) = " + 2*a + 'x + ' + b + ' nên f\'(' + x + ') = ' + v + '.']; },
+      function (r) { var k = ri(r,2,9); return ['Tính tích phân ∫₀^' + k + ' 2x dx.', uo(k*k, [2*k, k, k*k+k]), 0, 'Nguyên hàm của 2x là x²; x² từ 0 đến ' + k + ' bằng ' + k*k + '.']; },
+      function (r) { var S = ri(r,3,12), h = 3*ri(r,1,6), v = S*h/3; return ['Khối chóp có diện tích đáy ' + S + ' cm² và chiều cao ' + h + ' cm. Thể tích là (cm³):', uo(v, [S*h, S*h/2, S+h]), 0, 'V = 1/3 × S × h = ' + v + ' cm³.']; }
+    ]
+  };
+  function E(a) { return a.map(function (s) { var p = s.split('|'); return [p[0], p.slice(1, 5), 0, 'Đáp án đúng: ' + p[1] + '.']; }); }
+  var ENL = {
+    a1: E(['She ___ a student.|is|are|am|be','I ___ from Vietnam.|am|is|are|be','___ is your name?|What|Where|Who|How','They ___ football on Sunday.|play|plays|playing|played','This is ___ apple.|an|a|any|many','My mother’s sister is my ___.|aunt|uncle|cousin|brother','There ___ two books on the table.|are|is|am|be','What ___ is it? It’s seven o’clock.|time|day|date|year','He ___ breakfast at 7.|has|have|having|haves','The opposite of “big” is ___.|small|tall|long|old','How ___ are you? I’m ten.|old|many|much|long','I ___ like coffee.|don’t|doesn’t|not|isn’t']),
+    a2: E(['I ___ to the cinema yesterday.|went|go|goes|going','She is ___ than her sister.|taller|tallest|more tall|tall','We ___ watching TV when he came.|were|was|are|be','If it rains, we ___ at home.|will stay|would stay|stayed|staying','I have lived here ___ 2015.|since|for|ago|from','You ___ smoke here. It’s forbidden.|mustn’t|don’t have to|may|can','This is the ___ film I’ve ever seen.|best|better|good|most good','How much money ___ you spend?|did|does|are|has','I’m going to ___ my grandparents this weekend.|visit|visiting|visited|to visit','There isn’t ___ milk in the fridge.|any|some|a|many','He is interested ___ music.|in|on|at|of','She asked me ___ I liked pizza.|if|which|what|because']),
+    b1: E(['If I ___ more time, I would learn Spanish.|had|have|would have|will have','The window ___ by a boy yesterday.|was broken|broke|is broken|has broken','She said she ___ tired.|was|is|will be|had','I’m used to ___ up early.|getting|get|got|gets','He has worked here ___ five years.|for|since|during|from','You ___ better see a doctor.|had|would|are|did','By the time we arrived, the film ___.|had started|started|has started|starts','The man ___ lives next door is a pilot.|who|which|whose|whom','I wish I ___ swim.|could|can|would|did','She suggested ___ to the beach.|going|to go|go|went','Neither Tom ___ Ann came.|nor|or|and|but','Despite ___ tired, he kept working.|being|he was|of|that']),
+    b2: E(['Had I known, I ___ you.|would have told|would tell|told|will tell','He insisted ___ paying for dinner.|on|in|at|for','The report, ___ I read yesterday, was misleading.|which|what|who|whose','She is said ___ in Paris.|to live|living|lives|live','No sooner ___ sat down than the phone rang.|had I|I had|did I|have I','I’d rather you ___ here.|didn’t smoke|don’t smoke|won’t smoke|not smoke','The project must ___ by Friday.|be completed|complete|completing|have complete','Hardly ___ the room when the lights went out.|had she entered|she entered|did she entered|has she entered','It’s high time we ___ a decision.|made|make|making|are making','She apologised for ___ the meeting.|missing|to miss|miss|missed','___ the rain, the match went ahead.|Despite|Although|However|Because','He asked me whether I ___ to join.|wanted|want|wants|will want']),
+    c1: E(['Not only ___ late, but he also forgot the documents.|did he arrive|he arrived|arrived he|he did arrive','Her argument was so ___ that nobody could refute it.|cogent|trivial|erratic|bland','Closest in meaning to “ubiquitous”:|present everywhere|extremely rare|very old|hard to see','Were it not for your help, I ___ failed.|would have|would|will|had','The new policy has far-reaching ___ for small businesses.|implications|imitations|inflations|intentions','“To turn a blind eye” means ___.|to deliberately ignore|to lose sight|to look carefully|to feel afraid','She is reluctant ___ her opinion.|to share|sharing|share|for sharing','Seldom ___ such dedication.|have I seen|I have seen|I seen|did I saw','The scandal ___ the minister’s resignation.|precipitated|precluded|prescribed|perpetuated','“Mitigate” most nearly means ___.|make less severe|make worse|ignore|repeat','It is imperative that he ___ at once.|leave|leaves|left|will leave','He is a ___ of the arts, always funding galleries.|patron|patient|pattern|patriot']),
+    c2: E(['“Ephemeral” means ___.|short-lived|everlasting|harmful|ancient','Which sentence is grammatically correct?|Scarcely had we left when it began to rain.|Scarcely we had left when it began to rain.|Scarcely had we left than it began to rain.|Scarcely did we leave when it began to rain.','“Pernicious” is closest in meaning to ___.|harmful|cheerful|careful|ordinary','The CEO’s ___ remarks offended several shareholders.|disparaging|disparate|desperate|dispassionate','She has a ___ for languages, picking them up effortlessly.|knack|nick|nuance|niche','“Obfuscate” means ___.|to make unclear|to clarify|to praise|to delete','He was ___ in his refusal, ignoring every plea.|adamant|ambiguous|amenable|apathetic','The findings are at ___ with earlier research.|odds|ends|large|length','“Magnanimous” describes someone who is ___.|generous in forgiving|stingy|talkative|fearful','Only by ___ could the crisis have been averted.|acting swiftly|swiftly act|to act swiftly|swift acting','It would be ___ to ignore such warnings.|foolhardy|fruitful|fastidious|forthright','“Quixotic” means ___.|idealistic but impractical|very practical|extremely angry|deeply shy'])
+  };
   function subjectHtml() {
     return '<div class="ar-subject-box"><div class="ar-subject-title">Chọn môn thi</div><div class="ar-subjects">' +
       Object.keys(SUBJECTS).map(function (key) {
@@ -9174,7 +9277,7 @@ var CODEBANK = [
     subject = validSubject(subject || SUBJECT);
     var r = rng(seed);
     if (subject === 'tin') return pickCode(r, avg == null ? 1000 : avg);
-    var bank = BANKS[subject] || BANK, gens = GENS[subject] || [], nG = gens.length ? (subject === 'math' ? 5 : 4) : 0, av = avoid || {};
+    var lvl = LV[subject], bank = (subject === 'en' && ENL[lvl]) || (subject === 'math' ? [] : (BANKS[subject] || BANK)), gens = (subject === 'math' && MG[lvl]) || (subject === 'en' ? [] : (GENS[subject] || [])), nG = gens.length ? (subject === 'math' && MG[lvl] ? QN : subject === 'math' ? 5 : 4) : 0, av = avoid || {};
     var idx = shuffle(bank.map(function (_, i) { return i; }), r), used = {}, items = [];
     var fresh = idx.filter(function (i) { return !av[bank[i][0]]; }); if (fresh.length < QN - nG) fresh = idx;
     fresh.slice(0, QN - nG).forEach(function (i) { items.push(bank[i]); used[bank[i][0]] = 1; });
@@ -9187,9 +9290,11 @@ var CODEBANK = [
     });
   }
   /* ---------- Môn Tin: bài lập trình chạy thật trong trình duyệt ---------- */
-  function codeN(avg) { return avg >= 1100 ? 4 : 3; }
+  /* Môn Tin: random 3–4 bài (cùng seed → cùng đề ở hai máy), độ khó theo ELO trung bình */
   function pickCode(r, avg) {
-    var plan = avg < 900 ? [0,0,0] : avg < 1100 ? [0,0,1] : avg < 1300 ? [0,1,1,1] : [1,1,2,2], used = {}, out = [];
+    var four = r() < 0.5, k = avg < 900 ? 0 : avg < 1100 ? 1 : avg < 1300 ? 2 : 3;
+    var PL = [[[0,0,1],[0,0,0,1]], [[0,1,1],[0,0,1,1]], [[0,1,2],[0,1,1,2]], [[1,1,2],[1,1,2,2]]];
+    var plan = PL[k][four ? 1 : 0], used = {}, out = [];
     plan.forEach(function (d) {
       var pool = CODEBANK.filter(function (p) { return p.d === d && !used[p.id]; });
       if (!pool.length) pool = CODEBANK.filter(function (p) { return !used[p.id]; });
@@ -9201,10 +9306,7 @@ var CODEBANK = [
   /* ---------- Môn Tin: IDE kiểu Dev-C++, chọn ngôn ngữ, chấm bài theo stdin/stdout ---------- */
   var LANGS = {
     cpp: { n: 'C++ (g++)', f: 'main.cpp', id: 54, t: '#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}\n' },
-    c: { n: 'C (gcc)', f: 'main.c', id: 50, t: '#include <stdio.h>\n\nint main() {\n    \n    return 0;\n}\n' },
     py: { n: 'Python 3', f: 'main.py', id: 71, t: '# viết code của bạn ở đây\n' },
-    java: { n: 'Java', f: 'Main.java', id: 62, t: 'import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        \n    }\n}\n' },
-    js: { n: 'JavaScript', f: 'main.js', t: 'const lines = require("fs").readFileSync(0, "utf8").split("\\n");\n// viết code của bạn ở đây\n' }
   };
   var LANG = 'cpp';
   try { var sl = window.store.get('trace_arena_lang'); if (LANGS[sl]) LANG = sl; } catch (e) {}
@@ -9279,7 +9381,7 @@ var CODEBANK = [
           err: s === 6 ? (d.compile_output || 'Lỗi biên dịch') : (d.stderr || (s > 4 ? d.status.description : '') || d.message || '') };
       }).catch(function (e) {
         clearTimeout(tm);
-        return { out: '', net: true, err: 'Không kết nối được máy chấm (' + (e && e.name === 'AbortError' ? 'quá thời gian' : e && e.message || e) + '). Hãy kiểm tra mạng, hoặc chọn JavaScript để chạy ngay trên trình duyệt.' };
+        return { out: '', net: true, err: 'Không kết nối được máy chấm (' + (e && e.name === 'AbortError' ? 'quá thời gian' : e && e.message || e) + '). Hãy kiểm tra mạng rồi thử lại.' };
       });
   }
   function execCode(lang, code, stdin) { return lang === 'js' ? runLocalJS(code, stdin) : runRemote(lang, code, stdin); }
@@ -9378,25 +9480,91 @@ var CODEBANK = [
       judge(LANG, ta.value, ts, function (res) { if (done()) $('ar-out').textContent = logOf(res, ts); });
     }
   }
-  function submitCode(auto) {
-    if (!G || !G.q || G.q.mine || G.q.sub || G.over) return;
-    var g = G, qo = G.q, q = G.qs[qo.i], ta = $('ar-code'), o = $('ar-out'); qo.sub = true;
-    Array.prototype.forEach.call(document.querySelectorAll('#arena-body [data-act="run"],#arena-body [data-act="submit"],#ar-lang'), function (b) { b.disabled = true; });
-    if (ta) ta.readOnly = true;
-    if (o) { dvTab('log'); o.textContent = '⏳ Đang chấm ' + q.tests.length + ' test…'; }
-    judge(LANG, ta ? ta.value : '', q.tests, function (res) {
-      if (G !== g || G.q !== qo || g.over) return;
+  function submitCode(auto) { if (G && G.q) submitProblem(G.q, auto); }
+  function submitProblem(qo, auto) {
+    if (!G || G.over || !qo || qo.mine || qo.sub) return;
+    var g = G, q = g.qs[qo.i], lang = LANG, cur = function () { return G === g && G.q === qo; };
+    var ta = cur() ? $('ar-code') : null;
+    if (ta) (qo.codes = qo.codes || {})[lang] = ta.value;
+    var code = qo.codes && qo.codes[lang] != null ? qo.codes[lang] : LANGS[lang].t;
+    qo.sub = true;
+    if (cur()) {
+      Array.prototype.forEach.call(document.querySelectorAll('#arena-body [data-act="run"],#arena-body [data-act="submit"],#ar-lang'), function (b) { b.disabled = true; });
+      if (ta) ta.readOnly = true;
+      var o = $('ar-out'); if (o) { dvTab('log'); o.textContent = '⏳ Đang chấm ' + q.tests.length + ' test…'; }
+    }
+    tinMark();
+    judge(lang, code, q.tests, function (res) {
+      if (G !== g || g.over) return;
       var passed = 0; q.tests.forEach(function (_, i) { if (res[i] && res[i].ok) passed++; });
-      var total = q.tests.length, full = passed === total, el = Math.min(QT, Date.now() - qo.t0), r0 = res[0] || {};
+      var total = q.tests.length, full = passed === total, el = Math.min(QT, Date.now() - g.t0), r0 = res[0] || {};
       var pts = Math.round(100 * passed / total) + (full ? Math.round((1 - el / QT) * 50) : 0);
       qo.mine = { k: 0, ok: full, pts: pts };
-      G.dots[qo.i] = full ? 'ok' : 'bad'; var dt = $('ar-dot-' + qo.i); if (dt) dt.className = full ? 'ok' : 'bad';
-      G.sc.me += pts; if (full) G.ok++;
+      g.sc.me += pts; if (full) g.ok++;
       send({ t: 'a', qi: qo.i, pts: pts, ok: full }); sfx(full ? 'ok' : 'bad');
-      var o2 = $('ar-out'); if (o2) o2.textContent = logOf(res, q.tests);
-      var w = $('ar-why'); if (w) { w.hidden = false; w.textContent = (full ? '✅ Đúng hết ' : '📝 Qua ') + passed + '/' + total + ' test · +' + pts + ' điểm' + (r0.ce ? ' · lỗi biên dịch' : r0.net ? ' · không kết nối được máy chấm' : '') + (auto ? ' (hết giờ, tự nộp)' : ''); }
-      updScores(); checkAdv();
+      qo.log = logOf(res, q.tests);
+      qo.msg = (full ? '✅ Đúng hết ' : '📝 Qua ') + passed + '/' + total + ' test · +' + pts + ' điểm' + (r0.ce ? ' · lỗi biên dịch' : r0.net ? ' · không kết nối được máy chấm' : '') + (auto || g.ending ? ' (hết giờ, tự nộp)' : '');
+      if (cur()) {
+        var o2 = $('ar-out'); if (o2) o2.textContent = qo.log;
+        var w = $('ar-why'); if (w) { w.hidden = false; w.textContent = qo.msg; }
+      }
+      updScores(); tinDone();
     });
+  }
+  /* Môn Tin: 1 đồng hồ chung 30 phút, chọn Bài 1, Bài 2… tùy ý */
+  function tinTabs() {
+    return G.P.map(function (p, j) {
+      var m = p.mine ? (p.mine.ok ? ' ✅' : ' ❌') : p.sub ? ' ⏳' : '';
+      return '<button type="button" class="ar-tab' + (G.cur === j ? ' on' : '') + (p.mine ? (p.mine.ok ? ' ok' : ' bad') : '') + '" data-act="ptab" data-i="' + j + '">Bài ' + (j + 1) + m + '</button>';
+    }).join('');
+  }
+  function tinMark() {
+    if (!G || !G.P) return;
+    var tb = $('ar-tabs'); if (tb) tb.innerHTML = tinTabs();
+    var n = G.P.filter(function (p) { return p.mine; }).length, st = $('ar-st');
+    if (st) st.textContent = 'Đã nộp ' + n + '/' + G.P.length + ' bài';
+  }
+  function tinDone() {
+    tinMark(); updScores();
+    if (!G || G.fin || !G.P.every(function (p) { return p.mine; })) return;
+    G.fin = true; clearInterval(G.tick);
+    later(function () { if (G && !G.over) finishMine(); }, 2000);
+  }
+  function tinShow(i) {
+    if (!G || G.over || G.subject !== 'tin' || !G.P || !G.P[i]) return;
+    var ta = $('ar-code'); if (ta && G.q) (G.q.codes = G.q.codes || {})[LANG] = ta.value;
+    var pb = $('ar-prob'); if (!pb) return;
+    G.cur = i; G.q = G.P[i];
+    var qo = G.q;
+    pb.innerHTML = codeHtml(G.qs[i]) + '<div class="ar-why" id="ar-why" hidden></div>';
+    bindCode(); tinMark();
+    if (qo.sub || qo.mine) {
+      Array.prototype.forEach.call(document.querySelectorAll('#arena-body [data-act="run"],#arena-body [data-act="submit"],#ar-lang'), function (b) { b.disabled = true; });
+      var t2 = $('ar-code'); if (t2) t2.readOnly = true;
+      var o = $('ar-out'); if (o) o.textContent = qo.log || '⏳ Đang chấm…';
+      var w = $('ar-why'); if (w && qo.msg) { w.hidden = false; w.textContent = qo.msg; }
+    }
+  }
+  function tinStart() {
+    clearInterval(G.tick);
+    G.t0 = Date.now(); G.fin = false; G.ending = false;
+    G.P = G.qs.map(function (_, i) { return { i: i, t0: G.t0, mine: null, opp: G.oppAns[i] || null, adv: true, done: false, codes: {} }; });
+    G.cur = 0; G.q = G.P[0];
+    if (G.opp.bot) {
+      G.botPlan = G.qs.map(function (_, i) {
+        var d = QT * (0.15 + Math.random() * 0.7), ok = Math.random() < G.acc, pts = ok ? 100 + Math.round((1 - d / QT) * 50) : 0;
+        later(function () { onOpp({ t: 'a', qi: i, ok: ok, pts: pts }); }, d);
+        return { ok: ok, pts: pts };
+      });
+    }
+    body('<div class="ar-sb"><div class="ar-pl me"><div class="av">' + avHtml(prof(ME.u)) + '</div><div class="nm"><span>' + esc(ME.name) + '</span><b id="ar-s-me">0</b></div></div>' +
+      '<div class="ar-mid"><small>' + esc(subjectName(G.subject)) + ' · ' + QN + ' bài · 30 phút</small><div class="ar-ring long" id="ar-tl">30:00</div><span id="ar-st"></span></div>' +
+      '<div class="ar-pl op"><div class="av">' + (G.opp.bot ? '🤖' : esc(ini(G.opp.name))) + '</div><div class="nm"><span>' + oppName() + '</span><b id="ar-s-op">0</b></div></div></div>' +
+      '<div class="ar-tabs" id="ar-tabs"></div>' +
+      '<div class="ar-bar"><i id="ar-tb"></i></div><div id="ar-prob"></div>');
+    var stg = document.querySelector('#arena-body .ar-stage'); if (stg) stg.classList.add('wide');
+    tinShow(0); updScores();
+    G.tick = setInterval(tick, 100);
   }
   /* ---------- Điểm ELO, lịch sử ---------- */
   var START_R = 1000;
@@ -9500,7 +9668,7 @@ var CODEBANK = [
     (function nx() { if (i >= ks.length || !c.connected) return; var e = LB[ks[i++]]; try { c.publish(TOP + 'lb/' + e.u, JSON.stringify(e), { qos: 1, retain: true }); } catch (x) {} setTimeout(nx, 60); })();
   }
   function toast(t) { try { if (window.showToast) window.showToast(t, false); } catch (e) {} }
-  function lobPost(m) {
+  function lobPost(m) { if (m && m.s && m.l == null) m.l = LV[m.s] || '';
     m.f = SID; m.i = SID + Math.random().toString(36).slice(2, 9);
     var payload = JSON.stringify(m), topic = TOP + (m.to ? 'u/' + m.to : 'all');
     lob.cs.forEach(function (c) { try { if (c.connected) c.publish(topic, payload, { qos: 0 }); } catch (e) {} });
@@ -9591,12 +9759,12 @@ var CODEBANK = [
     }
     else if (t === 'q') {
       // Ghép trận: 2 người cùng đang tìm (cách nhau ≤ 10 giây) → ID nhỏ hơn làm chủ phòng
-      if (F && !F.lock && !inMatch() && Date.now() - F.t0 <= FIND_MS && F.subject === validSubject(m.s || 'en')) {
+      if (F && !F.lock && !inMatch() && Date.now() - F.t0 <= FIND_MS && F.subject === validSubject(m.s || 'en') && sameLv(m, F.subject)) {
         if (SID < m.f) pairHost(m.f);
         else if (!m.x) lobPost({ t: 'q', x: 1, s: F.subject });
       }
     }
-    else if (t === 'mm') { if (m.to === SID && m.mid && F && !F.lock && !inMatch() && F.subject === validSubject(m.s || 'en')) pairGuest(m); }
+    else if (t === 'mm') { if (m.to === SID && m.mid && F && !F.lock && !inMatch() && F.subject === validSubject(m.s || 'en') && sameLv(m, F.subject)) pairGuest(m); }
     else if (t === 'mmok') { if (m.to === SID) pairDone(m); }
     else if (t === 'iok') {
       if (m.to !== SID || !INV || INV.mid !== m.mid || INV.to !== m.f) return;
@@ -9607,7 +9775,7 @@ var CODEBANK = [
     else if (t === 'inv') {
       if (m.to !== SID || LINKS[m.mid] || (INC && INC.mid === m.mid)) return;
       if (busy() || !m.mid) { lobPost({ t: 'idc', to: m.f }); return; }
-      showInc({ from: m.f, n: String(m.n || 'Người chơi').slice(0, 24), r: m.r | 0, mid: String(m.mid), seed: m.seed >>> 0, subject: validSubject(m.s || 'en') });
+      showInc({ from: m.f, n: String(m.n || 'Người chơi').slice(0, 24), r: m.r | 0, mid: String(m.mid), seed: m.seed >>> 0, subject: validSubject(m.s || 'en'), lv: String(m.l || '') });
     }
     else if (t === 'icx') { if (INC && INC.from === m.f) hideInc(); }
     else if (t === 'idc') { if (INV && INV.to === m.f) { var nm = INV.name; clearInv(); toast(nm + ' đã từ chối lời mời.'); homeView(); } }
@@ -9695,6 +9863,7 @@ var CODEBANK = [
   function acceptInc() {
     var c = INC; if (!c || INV || F || inMatch()) { hideInc(); return; }
     hideInc(); ME.r = stats(ME.u).r;
+    if (c.lv) setLv(c.subject, c.lv);
     var link = mkLink(c.mid, c.from, c.seed, c.n, c.r, 'guest', c.subject);
     lobPost({ t: 'iok', to: c.from, mid: c.mid, n: ME.name, r: ME.r, s: c.subject });
     startLink(link);
@@ -9731,7 +9900,7 @@ var CODEBANK = [
     var me = busy();
     return ids.map(function (id) {
       var p = lob.peers[id], sj = SUBJECTS[validSubject(p.s || 'en')];
-      return '<div class="ar-row"><span class="ar-sa">' + esc(ini(p.n)) + '</span><div class="ar-rn"><b><span>' + esc(p.n) + '</span></b><small>' + sj.icon + ' ' + esc(sj.name) + '</small></div>' +
+      return '<div class="ar-row"><span class="ar-sa">' + esc(ini(p.n)) + '</span><div class="ar-rn"><b><span>' + esc(p.n) + '</span></b><small>' + sj.icon + ' ' + esc(sj.name) + (p.l && lvLabel(validSubject(p.s || 'en'), p.l) ? ' · ' + esc(lvLabel(validSubject(p.s || 'en'), p.l)) : '') + '</small></div>' +
         '<span class="ar-elo2">' + p.r + '</span><button type="button" class="ar-chal" data-act="chal" data-sid="' + esc(id) + '"' + (p.b || me ? ' disabled' : '') + '>' + (p.b ? 'Đang bận' : 'Khiêu chiến') + '</button></div>';
     }).join('');
   }
@@ -9770,7 +9939,7 @@ var CODEBANK = [
     if (!inMatch()) { QN = 7; QT = 15000; }
     var s = stats(ME.u), p = prof(ME.u); ME.name = p.name || ME.name;
     var rk = rankOf(s.r), g = s.w + s.l + s.d, wr = g ? Math.round(s.w / g * 100) : 0;
-    var desc = SUBJECT === 'tin' ? '3–4 bài lập trình · chọn C++, C, Python, Java hoặc JavaScript · độ khó theo ELO. ' : QN + ' câu · ' + (QT / 1000) + ' giây mỗi câu. ';
+    var desc = LVL[SUBJECT] ? lvLabel(SUBJECT, LV[SUBJECT]) + ' · ' + QN + ' câu · ' + (QT / 1000) + ' giây mỗi câu. ' : SUBJECT === 'tin' ? 'Ngẫu nhiên 3–4 bài lập trình · tổng 30 phút, chọn Bài 1, Bài 2… tùy ý · C++ hoặc Python · độ khó theo ELO. ' : QN + ' câu · ' + (QT / 1000) + ' giây mỗi câu. ';
     body('<div class="ar-wrap"><div class="ar-grid">' +
       '<div class="ar-col"><section class="ar-card"><h2 class="ar-ct c">Thông tin đấu thủ</h2><p class="ar-cs">' + esc(ME.name) + '</p>' +
         '<div class="ar-pav"><div>' + avHtml(p) + '</div><i title="Đang online"></i></div>' +
@@ -9780,7 +9949,7 @@ var CODEBANK = [
           stRow('Tỷ lệ thắng:', '<b class="cy">' + wr + '%</b>') + stRow('Chuỗi thắng:', '🎖️ <b>' + s.st + '</b> <small>(Kỷ lục: ' + s.bs + ')</small>') + '</div></section></div>' +
       '<div class="ar-col"><section class="ar-card"><h4 class="ar-h">Chọn môn thi</h4><div class="ar-subs">' + Object.keys(SUBJECTS).map(function (k) {
           return '<button type="button" class="ar-sub' + (SUBJECT === k ? ' on' : '') + '" data-act="subject" data-subj="' + k + '" aria-pressed="' + (SUBJECT === k ? 'true' : 'false') + '"><span>' + SUBJECTS[k].icon + '</span>' + esc(SUBJECTS[k].name) + '</button>';
-        }).join('') + '</div>' +
+        }).join('') + '</div>' + lvHtml() +
         '<button type="button" class="ar-bolt" data-act="find" aria-label="Ghép trận nhanh">' + BOLT + '</button>' +
         '<div class="ar-pt">Ghép trận nhanh</div><p class="ar-pd">' + desc + 'Nếu có người khác cũng bấm trong vòng ' + (FIND_MS / 1000) + ' giây, hai bạn sẽ được ghép trận. Không có ai, bạn đấu với Bot.</p>' +
         '<div class="ar-onh"><i id="ar-net" class="ar-net wait"></i><span>Đang online — khiêu chiến</span><em id="ar-onc">0</em></div><div id="ar-onl" class="ar-list"></div></section></div>' +
@@ -9827,8 +9996,9 @@ var CODEBANK = [
   /* ---------- Trận đấu ---------- */
   function beginMatch(seed, opp, link, subject) {
     var matchSubject = validSubject(subject || SUBJECT), avgR = Math.round(((ME.r | 0) + (opp.r | 0)) / 2);
-    QN = matchSubject === 'tin' ? codeN(avgR) : 7; QT = matchSubject === 'tin' ? 200000 : 15000;
-    G = { subject: matchSubject, qs: pick(seed, matchSubject, link ? null : seenSet(matchSubject), avgR), opp: opp, link: link, qi: -1, q: null, sc: { me: 0, opp: 0 }, ok: 0, oppAns: {}, oppFin: null, over: false, waiting: false, timers: [], tick: 0, acc: 0.35 + Math.random() * 0.10 };
+    var qsPicked = pick(seed, matchSubject, link ? null : seenSet(matchSubject), avgR);
+    QN = matchSubject === 'tin' ? qsPicked.length : 7; QT = matchSubject === 'tin' ? 1800000 : 15000;
+    G = { subject: matchSubject, qs: qsPicked, opp: opp, link: link, qi: -1, q: null, sc: { me: 0, opp: 0 }, ok: 0, oppAns: {}, oppFin: null, over: false, waiting: false, timers: [], tick: 0, acc: 0.35 + Math.random() * 0.10 };
     var g = G;
     if (!link && matchSubject !== 'tin') markSeen(matchSubject, G.qs);
     hideInc(); lobPresence();
@@ -9838,13 +10008,14 @@ var CODEBANK = [
     }
     G.dots = [];
     body('<div class="ar-find"><div class="ar-sb" style="margin-bottom:6px"><div class="ar-pl me"><div class="av">' + avHtml(prof(ME.u)) + '</div><div class="nm"><span>Bạn</span><b style="font-size:1.05rem">' + esc(ME.name) + '</b></div></div><div class="ar-mid"><b style="font-size:1.6rem;opacity:.7">VS</b></div><div class="ar-pl op"><div class="av">' + (opp.bot ? '🤖' : esc(ini(opp.name))) + '</div><div class="nm"><span>' + (opp.bot ? 'Bot' : 'Đối thủ') + '</span><b style="font-size:1.05rem">' + esc(opp.name) + '</b></div></div></div>' +
-      '<p style="margin-top:14px">Môn ' + esc(subjectName(matchSubject)) + ' · ' + QN + (matchSubject === 'tin' ? ' bài lập trình' : ' câu') + ' · chuẩn bị, trận đấu sắp bắt đầu!</p></div>');
+      '<p style="margin-top:14px">Môn ' + esc(subjectName(matchSubject)) + ' · ' + QN + (matchSubject === 'tin' ? ' bài lập trình · 30 phút' : ' câu') + ' · chuẩn bị, trận đấu sắp bắt đầu!</p></div>');
     later(nextQ, 1800);
   }
   function send(m) { if (G && G.link) { try { G.link.conn.send(m); } catch (e) {} } }
 
   function oppName() { return esc(G.opp.name) + (G.opp.bot ? ' 🤖' : ''); }
   function oppShown() {
+    if (G.subject === 'tin') return sumOpp();
     var up = G.q ? (G.q.done ? G.q.i : G.q.i - 1) : QN - 1, s = 0;
     for (var j = 0; j <= up; j++) if (G.oppAns[j]) s += G.oppAns[j].pts;
     return s;
@@ -9862,6 +10033,7 @@ var CODEBANK = [
 
   function nextQ() {
     if (!G || G.over) return;
+    if (G.subject === 'tin') return tinStart();
     clearInterval(G.tick);
     G.qi++;
     if (G.qi >= QN) return finishMine();
@@ -9885,7 +10057,16 @@ var CODEBANK = [
     G.tick = setInterval(tick, 100);
   }
   function tick() {
-    if (!G || !G.q || G.over) return;
+    if (!G || G.over) return;
+    if (G.subject === 'tin') {
+      if (!G.P || G.fin) return;
+      var tel = Date.now() - G.t0, tleft = Math.max(0, QT - tel), ttb = $('ar-tb'), ttl = $('ar-tl');
+      if (ttb) { ttb.style.width = (tleft / QT * 100) + '%'; ttb.className = tleft < 300000 ? 'low' : ''; }
+      if (ttl) { var sec = Math.ceil(tleft / 1000); ttl.textContent = Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2); }
+      if (tel >= QT && !G.ending) { G.ending = true; G.P.forEach(function (pp) { submitProblem(pp); }); }
+      return;
+    }
+    if (!G.q) return;
     var el = Date.now() - G.q.t0, left = Math.max(0, QT - el), tb = $('ar-tb'), tl = $('ar-tl');
     if (tb) { tb.style.width = (left / QT * 100) + '%'; tb.className = left < 4000 ? 'low' : ''; }
     if (tl) tl.textContent = Math.ceil(left / 1000) + 's';
@@ -9926,6 +10107,7 @@ var CODEBANK = [
       var qi = m.qi | 0;
       if (qi < 0 || qi >= QN || G.oppAns[qi]) return;
       G.oppAns[qi] = { pts: Math.max(0, Math.min(150, m.pts | 0)), ok: !!m.ok };
+      if (G.subject === 'tin') { if (G.P && G.P[qi]) G.P[qi].opp = G.oppAns[qi]; updScores(); return; }
       if (G.q && G.q.i === qi && !G.q.opp) { G.q.opp = G.oppAns[qi]; checkAdv(); }
     } else if (m.t === 'fin') {
       G.oppFin = Math.max(0, Math.min(QN * 150, m.score | 0));
@@ -9936,12 +10118,15 @@ var CODEBANK = [
 
   function finishMine() {
     G.q = null;
-    if (G.opp.bot) return finalize(sumOpp());
+    if (G.opp.bot) {
+      if (G.botPlan) G.botPlan.forEach(function (b, i) { if (!G.oppAns[i]) G.oppAns[i] = { pts: b.pts, ok: b.ok }; });
+      return finalize(sumOpp());
+    }
     send({ t: 'fin', score: G.sc.me });
     if (G.oppFin != null) return finalize(G.oppFin);
     G.waiting = true;
     body('<div class="ar-find"><div class="ar-spin"></div><h3>Bạn đã xong!</h3><p>Đang chờ đối thủ hoàn thành…</p></div>');
-    later(function () { if (G && !G.over) finalize(sumOpp()); }, 20000);
+    later(function () { if (G && !G.over) finalize(sumOpp()); }, G.subject === 'tin' && G.t0 ? Math.max(20000, QT - (Date.now() - G.t0) + 20000) : 20000);
   }
   function endLink(g) {
     if (!g.link) return;
@@ -10029,6 +10214,8 @@ var CODEBANK = [
       var nextSubject = validSubject(b.getAttribute('data-subj'));
       if (nextSubject !== SUBJECT) { SUBJECT = nextSubject; try { window.store.set('trace_arena_subject', SUBJECT); } catch (e) {} homeView(); lobPresence(); }
     }
+    else if (a === 'level') { if (F || INV || INC || inMatch()) return; setLv(SUBJECT, b.getAttribute('data-lv')); homeView(); lobPresence(); }
+    else if (a === 'lang') { if (F || INV || INC || inMatch()) return; var lk = b.getAttribute('data-lang'); if (LANGS[lk]) { LANG = lk; try { window.store.set('trace_arena_lang', lk); } catch (e) {} homeView(); } }
     else if (a === 'find') {
       if (INV || INC || inMatch()) return;
       G = null; sfx('go'); startFind();
@@ -10040,6 +10227,7 @@ var CODEBANK = [
     else if (a === 'tab') { LOBTAB = b.getAttribute('data-tab') || 'on'; renderSide(); }
     else if (a === 'login') { close(); var ab = $('acct-btn'); if (ab) ab.click(); }
     else if (a === 'ans') lock(parseInt(b.getAttribute('data-k'), 10));
+    else if (a === 'ptab') tinShow(parseInt(b.getAttribute('data-i'), 10));
     else if (a === 'run') runCode();
     else if (a === 'submit') submitCode(false);
     else if (a === 'lball') { LBALL = !LBALL; renderSide(); }
