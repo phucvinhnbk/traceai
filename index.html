@@ -1,14 +1,48 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
+<head><script id="trace-guard">(function(){
+'use strict';
+var allowEditable=function(t){return t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable);};
+// Chặn chuột phải
+document.addEventListener('contextmenu',function(e){if(!allowEditable(e.target))e.preventDefault();},true);
+// Chặn kéo/chọn/copy ngoài ô nhập (vẫn cho copy trong ô nhập và code editor)
+['dragstart','selectstart','copy','cut'].forEach(function(ev){
+  document.addEventListener(ev,function(e){
+    var t=e.target&&e.target.nodeType===1?e.target:(e.target&&e.target.parentElement);
+    if(allowEditable(t)||(t&&t.closest&&t.closest('.chat-bubble-ai,.trace-quiz-shell,.ia-root,#arena-modal,.cr-shell,.we-shell,.sp-shell,.trace-memo-summary')))return;
+    e.preventDefault();
+  },true);
+});
+// Chặn phím tắt xem source / devtools / lưu trang / in
+document.addEventListener('keydown',function(e){
+  var k=(e.key||'').toLowerCase(),c=e.ctrlKey||e.metaKey;
+  if(e.key==='F12'||(c&&e.shiftKey&&['i','j','c','k'].indexOf(k)>=0)||(c&&['u','s','p'].indexOf(k)>=0)||(e.metaKey&&e.altKey&&['i','u','j','c'].indexOf(k)>=0)){
+    e.preventDefault();e.stopPropagation();return false;
+  }
+},true);
+// Phát hiện DevTools mở (chênh lệch kích thước cửa sổ + debugger timing)
+var blocked=false;
+function lock(){
+  if(blocked)return;blocked=true;
+  document.documentElement.innerHTML='<body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#e2e8f0;font:16px system-ui;text-align:center;padding:24px">Vui lòng đóng công cụ dành cho nhà phát triển (DevTools) rồi tải lại trang.</body>';
+}
+function check(){
+  var w=window.outerWidth-window.innerWidth>200,h=window.outerHeight-window.innerHeight>260;
+  if((w||h)&&!/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent))lock();
+}
+setInterval(check,1500);
+// Xóa console
+try{var noop=function(){};['log','info','warn','debug','table','dir','trace'].forEach(function(m){console[m]=noop;});}catch(e){}
+})();
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Trace AI — Trợ lý học tập thông minh</title>
+    <title>Trace AI</title>
     <style>/* Tailwind (đã build sẵn) */
 *,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.19 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:Inter,system-ui,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.container{width:100%}@media (min-width:640px){.container{max-width:640px}}@media (min-width:768px){.container{max-width:768px}}@media (min-width:1024px){.container{max-width:1024px}}@media (min-width:1280px){.container{max-width:1280px}}@media (min-width:1536px){.container{max-width:1536px}}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0}.-right-2{right:-.5rem}.-top-2{top:-.5rem}.right-4{right:1rem}.top-0{top:0}.top-20{top:5rem}.z-40{z-index:40}.z-50{z-index:50}.z-\[60\]{z-index:60}.mx-auto{margin-left:auto;margin-right:auto}.my-4{margin-top:1rem;margin-bottom:1rem}.mb-1{margin-bottom:.25rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}.mr-1\.5{margin-right:.375rem}.mr-2{margin-right:.5rem}.mt-0\.5{margin-top:.125rem}.mt-1{margin-top:.25rem}.mt-1\.5{margin-top:.375rem}.mt-2{margin-top:.5rem}.block{display:block}.flex{display:flex}.grid{display:grid}.contents{display:contents}.hidden{display:none}.h-10{height:2.5rem}.h-11{height:2.75rem}.h-16{height:4rem}.h-2\.5{height:.625rem}.h-5{height:1.25rem}.h-6{height:1.5rem}.h-9{height:2.25rem}.max-h-40{max-height:10rem}.max-h-\[55vh\]{max-height:55vh}.min-h-screen{min-height:100vh}.w-10{width:2.5rem}.w-11{width:2.75rem}.w-16{width:4rem}.w-2\.5{width:.625rem}.w-5{width:1.25rem}.w-6{width:1.5rem}.w-9{width:2.25rem}.w-full{width:100%}.min-w-0{min-width:0}.max-w-2xl{max-width:42rem}.max-w-3xl{max-width:48rem}.max-w-\[88\%\]{max-width:88%}.max-w-full{max-width:100%}.max-w-lg{max-width:32rem}.max-w-xs{max-width:20rem}.flex-1{flex:1 1 0%}.flex-shrink-0{flex-shrink:0}.flex-grow{flex-grow:1}.scale-0{--tw-scale-x:0;--tw-scale-y:0}.scale-0,.transform{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.cursor-not-allowed{cursor:not-allowed}.cursor-pointer{cursor:pointer}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-center{align-items:center}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem*var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-y-auto{overflow-y:auto}.scroll-smooth{scroll-behavior:smooth}.rounded-2xl{border-radius:1rem}.rounded-3xl{border-radius:1.5rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-xl{border-radius:.75rem}.rounded-r-xl{border-top-right-radius:.75rem;border-bottom-right-radius:.75rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-l-4{border-left-width:4px}.border-t{border-top-width:1px}.border-amber-100{--tw-border-opacity:1;border-color:rgb(254 243 199/var(--tw-border-opacity,1))}.border-amber-400{--tw-border-opacity:1;border-color:rgb(251 191 36/var(--tw-border-opacity,1))}.border-green-100{--tw-border-opacity:1;border-color:rgb(220 252 231/var(--tw-border-opacity,1))}.border-neutral-100{--tw-border-opacity:1;border-color:rgb(241 245 249/var(--tw-border-opacity,1))}.border-neutral-200{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.border-neutral-300{--tw-border-opacity:1;border-color:rgb(203 213 225/var(--tw-border-opacity,1))}.border-red-100{--tw-border-opacity:1;border-color:rgb(254 226 226/var(--tw-border-opacity,1))}.border-white\/30{border-color:hsla(0,0%,100%,.3)}.border-white\/50{border-color:hsla(0,0%,100%,.5)}.border-white\/80{border-color:hsla(0,0%,100%,.8)}.bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235/var(--tw-bg-opacity,1))}.bg-amber-50\/80{background-color:rgba(255,251,235,.8)}.bg-black{--tw-bg-opacity:1;background-color:rgb(0 0 0/var(--tw-bg-opacity,1))}.bg-black\/40{background-color:rgba(0,0,0,.4)}.bg-black\/60{background-color:rgba(0,0,0,.6)}.bg-blue-100{--tw-bg-opacity:1;background-color:rgb(219 234 254/var(--tw-bg-opacity,1))}.bg-green-100{--tw-bg-opacity:1;background-color:rgb(220 252 231/var(--tw-bg-opacity,1))}.bg-green-50\/80{background-color:rgba(240,253,244,.8)}.bg-green-500{--tw-bg-opacity:1;background-color:rgb(34 197 94/var(--tw-bg-opacity,1))}.bg-neutral-100{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.bg-neutral-200{--tw-bg-opacity:1;background-color:rgb(226 232 240/var(--tw-bg-opacity,1))}.bg-neutral-400{--tw-bg-opacity:1;background-color:rgb(163 163 163/var(--tw-bg-opacity,1))}.bg-neutral-50{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.bg-neutral-50\/50{background-color:rgba(248,250,252,.5)}.bg-neutral-800{--tw-bg-opacity:1;background-color:rgb(30 41 59/var(--tw-bg-opacity,1))}.bg-primary{--tw-bg-opacity:1;background-color:rgb(37 99 235/var(--tw-bg-opacity,1))}.bg-red-50{--tw-bg-opacity:1;background-color:rgb(254 242 242/var(--tw-bg-opacity,1))}.bg-red-500{--tw-bg-opacity:1;background-color:rgb(239 68 68/var(--tw-bg-opacity,1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.object-contain{-o-object-fit:contain;object-fit:contain}.object-cover{-o-object-fit:cover;object-fit:cover}.p-3{padding:.75rem}.p-3\.5{padding:.875rem}.p-4{padding:1rem}.p-6{padding:1.5rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.py-3\.5{padding-top:.875rem;padding-bottom:.875rem}.py-4{padding-top:1rem;padding-bottom:1rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.text-center{text-align:center}.font-sans{font-family:Inter,system-ui,sans-serif}.text-\[clamp\(1\.5rem\2c 3vw\2c 2rem\)\]{font-size:clamp(1.5rem,3vw,2rem)}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-semibold{font-weight:600}.text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9/var(--tw-text-opacity,1))}.text-amber-800{--tw-text-opacity:1;color:rgb(146 64 14/var(--tw-text-opacity,1))}.text-blue-100{--tw-text-opacity:1;color:rgb(219 234 254/var(--tw-text-opacity,1))}.text-blue-700{--tw-text-opacity:1;color:rgb(29 78 216/var(--tw-text-opacity,1))}.text-green-700{--tw-text-opacity:1;color:rgb(21 128 61/var(--tw-text-opacity,1))}.text-neutral-400{--tw-text-opacity:1;color:rgb(163 163 163/var(--tw-text-opacity,1))}.text-neutral-500{--tw-text-opacity:1;color:rgb(115 115 115/var(--tw-text-opacity,1))}.text-neutral-600{--tw-text-opacity:1;color:rgb(82 82 82/var(--tw-text-opacity,1))}.text-neutral-700{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.text-neutral-800{--tw-text-opacity:1;color:rgb(30 41 59/var(--tw-text-opacity,1))}.text-primary{--tw-text-opacity:1;color:rgb(37 99 235/var(--tw-text-opacity,1))}.text-red-600{--tw-text-opacity:1;color:rgb(220 38 38/var(--tw-text-opacity,1))}.text-warning{--tw-text-opacity:1;color:rgb(245 158 11/var(--tw-text-opacity,1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.underline{text-decoration-line:underline}.opacity-75{opacity:.75}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgba(0,0,0,.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color)}.shadow-2xl,.shadow-card{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-card{--tw-shadow:0 4px 20px rgba(0,0,0,.08);--tw-shadow-colored:0 4px 20px var(--tw-shadow-color)}.shadow-glow{--tw-shadow:0 0 20px rgba(37,99,235,.15);--tw-shadow-colored:0 0 20px var(--tw-shadow-color)}.shadow-glow,.shadow-lg{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color)}.shadow-md{--tw-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color),0 2px 4px -2px var(--tw-shadow-color)}.shadow-md,.shadow-sm{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgba(0,0,0,.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color)}.outline-none{outline:2px solid transparent;outline-offset:2px}.outline{outline-style:solid}.blur{--tw-blur:blur(8px)}.blur,.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px)}.backdrop-blur-sm,.backdrop-filter{-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-colors{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-opacity{transition-property:opacity;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-transform{transition-property:transform;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.duration-300{transition-duration:.3s}.hover\:-translate-y-0\.5:hover{--tw-translate-y:-0.125rem;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.hover\:border-primary\/50:hover{border-color:rgba(37,99,235,.5)}.hover\:bg-neutral-50:hover{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.hover\:bg-red-500:hover{--tw-bg-opacity:1;background-color:rgb(239 68 68/var(--tw-bg-opacity,1))}.hover\:bg-white\/20:hover{background-color:hsla(0,0%,100%,.2)}.hover\:text-primaryDark:hover{--tw-text-opacity:1;color:rgb(29 78 216/var(--tw-text-opacity,1))}.hover\:shadow-lg:hover{--tw-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color)}.hover\:shadow-lg:hover,.hover\:shadow-md:hover{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.hover\:shadow-md:hover{--tw-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color),0 2px 4px -2px var(--tw-shadow-color)}.hover\:shadow-primary\/20:hover{--tw-shadow-color:rgba(37,99,235,.2);--tw-shadow:var(--tw-shadow-colored)}.focus\:border-primary:focus{--tw-border-opacity:1;border-color:rgb(37 99 235/var(--tw-border-opacity,1))}.focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}.active\:translate-y-0:active{--tw-translate-y:0px;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.disabled\:opacity-50:disabled{opacity:.5}@media (min-width:640px){.sm\:block{display:block}.sm\:inline{display:inline}}@media (min-width:768px){.md\:h-10{height:2.5rem}.md\:w-10{width:2.5rem}.md\:gap-3{gap:.75rem}.md\:gap-4{gap:1rem}.md\:p-5{padding:1.25rem}.md\:p-6{padding:1.5rem}.md\:py-8{padding-top:2rem;padding-bottom:2rem}}
     </style>
     <style id="fa-embedded">@font-face{font-family:FontAwesome;src:url(data:font/woff;base64,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) format("woff");font-weight:400;font-style:normal;font-display:block}.fa{display:inline-block;font:normal normal normal 14px/1 FontAwesome;font-size:inherit;text-rendering:auto;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.fa-lg{font-size:1.33333333em;line-height:.75em;vertical-align:-15%}.fa-spin{animation:fa-spin 2s infinite linear}@keyframes fa-spin{to{transform:rotate(360deg)}}.fa-search:before,.icon-search:before{content:""}.fa-user:before{content:""}.fa-close:before,.fa-remove:before,.fa-times:before{content:""}.fa-cog:before,.fa-gear:before{content:""}.fa-refresh:before{content:""}.fa-headphones:before{content:""}.fa-volume-up:before{content:""}.fa-book:before,.icon-book:before{content:""}.fa-camera:before{content:""}.fa-image:before,.fa-photo:before,.fa-picture-o:before{content:""}.fa-edit:before,.fa-pencil-square-o:before{content:""}.fa-stop:before{content:""}.fa-check-circle:before,.wy-inline-validate.wy-inline-validate-success .wy-input-context:before{content:""}.fa-eye:before{content:""}.fa-eye-slash:before{content:""}.fa-exclamation-triangle:before,.fa-warning:before{content:""}.fa-calendar:before{content:""}.fa-chevron-down:before{content:""}.fa-key:before{content:""}.fa-comments:before{content:""}.fa-trophy:before{content:""}.fa-copy:before,.fa-files-o:before{content:""}.fa-floppy-o:before,.fa-save:before{content:""}.fa-comments-o:before{content:""}.fa-sitemap:before{content:""}.fa-lightbulb-o:before{content:""}.fa-microphone:before{content:""}.fa-sun-o:before{content:""}.fa-moon-o:before{content:""}.fa-bug:before{content:""}.fa-graduation-cap:before,.fa-mortar-board:before{content:""}.fa-paper-plane:before,.fa-send:before{content:""}.fa-paint-brush:before{content:""}.rst-versions .rst-current-version .fa-book,.rst-versions .rst-current-version .icon-book{float:left}.rst-versions.rst-badge .fa-book,.rst-versions.rst-badge .icon-book{float:none;line-height:30px}.rst-versions.rst-badge.shift-up .rst-current-version .fa-book,.rst-versions.rst-badge.shift-up .rst-current-version .icon-book{float:left}</style>
-    <!-- KaTeX: hiển thị công thức toán ($...$ và $$...$$) -->
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" onerror="this.onerror=null;this.href='https://unpkg.com/katex@0.16.11/dist/katex.min.css'">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" onload="window.dispatchEvent(new Event('trace-katex-ready'))" onerror="window.dispatchEvent(new Event('trace-katex-failed'))"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,15 +50,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
-        // Truy cập localStorage an toàn
         window.store = {
             get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
             set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
         };
     </script>
     <script>
-        // Lịch sử chat chỉ sống trong phiên hiện tại: mỗi lần tải lại trang đều bắt đầu sạch.
-        // Chỉ dữ liệu "Lộ trình" (trace_ai_learning_records_v1) và cài đặt (API key, giao diện...) được giữ lại.
         (function () {
             var KEEP = { 'trace_ai_learning_records_v1': 1 };
             try {
@@ -36,12 +67,10 @@
                 rm.forEach(function (k) { localStorage.removeItem(k); });
             } catch (e) {}
             try { sessionStorage.clear(); } catch (e) {}
-            // Nút Back/Forward có thể khôi phục nguyên màn hình chat cũ từ bộ nhớ đệm (bfcache) -> nạp lại để xóa sạch.
             window.addEventListener('pageshow', function (ev) { if (ev.persisted) location.reload(); });
         })();
     </script>
     <script>
-        // Chọn giao diện: ưu tiên lựa chọn đã lưu, nếu chưa có thì theo hệ điều hành
         (function () {
             var t = null;
             try { t = localStorage.getItem('theme'); } catch (e) {}
@@ -294,7 +323,6 @@
 </style>
 
 <script>
-// Khởi tạo giao diện độc lập với chế độ sáng/tối; cổ điển xanh là mặc định.
 (function () {
   const valid = ['classic','peach','ocean','snow','hacker','lava'];
   let skin = store.get('skin');
@@ -1194,7 +1222,7 @@ html[data-skin="midnight"][data-theme="light"] pre,html[data-skin="galaxy"][data
 </style>
 </head>
 <body class="font-sans text-neutral-800 min-h-screen flex flex-col scroll-smooth">
-    <!-- Header -->
+    
     <header class="glass sticky top-0 z-40 border-b border-white/50 shadow-sm">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center gap-3">
@@ -1221,13 +1249,13 @@ html[data-skin="midnight"][data-theme="light"] pre,html[data-skin="galaxy"][data
             </div>
         </div>
     </header>
-    <!-- Thanh trạng thái -->
+    
     <div id="status-bar" class="border-b py-2.5 px-4 text-center text-sm transition-all duration-300 bg-amber-50/80 border-amber-100">
         <span id="status-text" class="text-amber-700 font-medium">
             <i class="fa fa-exclamation-triangle mr-1.5"></i> Chưa cấu hình — Nhấn "Cấu Hình API" để bắt đầu
         </span>
     </div>
-    <!-- Modal Cấu Hình -->
+    
     <div id="api-modal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" id="modal-overlay"></div>
         <div class="absolute inset-0 flex items-center justify-center p-4 overflow-y-auto">
@@ -1321,7 +1349,7 @@ html[data-skin="midnight"][data-theme="light"] pre,html[data-skin="galaxy"][data
             </div>
         </div>
     </div>
-    <!-- Modal Chụp Ảnh -->
+    
     <div id="camera-modal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="camera-overlay"></div>
         <div class="absolute inset-0 flex items-center justify-center p-4 overflow-y-auto">
@@ -1611,7 +1639,7 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
                     </div>
                 </div>
                 <div class="p-4 border-t border-neutral-100 bg-white">
-                    <!-- Xem trước ảnh đính kèm -->
+                    
                     <div id="image-preview" class="gap-2 flex-wrap mb-3" style="display:none"></div>
                     <label id="mm-img-row" class="mm-img-row" hidden><input type="checkbox" id="mm-img-toggle" checked><span>Kèm hình ảnh minh họa</span></label>
                     <div class="speech-speed-row" aria-label="Tốc độ đọc câu trả lời">
@@ -1744,7 +1772,7 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
     <footer class="py-4 text-center text-sm text-neutral-500">
         <p>© 2026 Trace AI — Học thông minh, tư duy chủ động 💙</p>
     </footer>
-    <!-- Bảng nói chuyện bằng giọng nói (kiểu ChatGPT Voice) -->
+    
     <div id="vo" class="vo" hidden role="dialog" aria-modal="true" aria-label="Trò chuyện bằng giọng nói" data-state="idle">
         <div class="vo-top"><span class="vo-chip" id="vo-chip">🎙️ Tiếng Việt</span></div>
         <div class="vo-stage">
@@ -1772,7 +1800,7 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
     </div>
     <canvas id="fx-canvas" aria-hidden="true"></canvas>
     <canvas id="trace-particle-canvas" aria-hidden="true"></canvas>
-    <!-- Kho giao diện -->
+    
     <div id="sk-modal" class="sk-modal" hidden>
         <div class="sk-overlay" id="sk-overlay"></div>
         <div class="sk-panel" role="dialog" aria-modal="true" aria-label="Kho giao diện">
@@ -1811,7 +1839,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
                 provider: 'groq',
                 model: 'llama-3.3-70b-versatile',
                 endpoint: 'https://api.groq.com/openai/v1/chat/completions',
-                // Llama 3.3 70B chỉ đọc chữ → khi có ảnh dùng model vision của Groq
                 visionModel: 'meta-llama/llama-4-scout-17b-16e-instruct',
                 hint: '✅ Miễn phí | Nhanh nhất | Ảnh dùng Llama 4 Scout | Lấy key tại: console.groq.com/keys'
             },
@@ -1899,7 +1926,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
             }
         }
         settingsBtn.addEventListener('click', () => {
-            // luôn chọn lại model đã lưu khi mở modal
             modelRadios.forEach(r => { r.checked = r.value === CONFIG.selectedModel; updateModelCardStyle(r); });
             apiKeyInput.value = CONFIG.apiKey;
             updateKeyHint();
@@ -1926,7 +1952,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
             document.body.appendChild(notification);
             setTimeout(() => notification.remove(), 3000);
         });
-        // ====================== HÌNH ẢNH ======================
         function showToast(msg, isError = true) {
             const n = document.createElement('div');
             n.className = `fixed top-20 right-4 ${isError ? 'bg-red-500' : 'bg-green-500'} text-white px-5 py-3 rounded-xl shadow-lg z-[60] max-w-xs text-sm`;
@@ -1934,7 +1959,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
             document.body.appendChild(n);
             setTimeout(() => n.remove(), 3500);
         }
-        // Thu nhỏ ảnh + chuyển sang JPEG để gửi nhẹ và tương thích mọi API
         function resizeToDataURL(source, w, h) {
             const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(w, h));
             const cw = Math.max(1, Math.round(w * scale));
@@ -2003,7 +2027,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
                 imagePreview.appendChild(wrap);
             });
         }
-        // Tải ảnh từ máy
         uploadBtn.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', async () => {
             await handleFiles(Array.from(fileInput.files));
@@ -2013,12 +2036,10 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
             await handleFiles(Array.from(cameraFallback.files));
             cameraFallback.value = '';
         });
-        // Dán ảnh (Ctrl+V) vào ô nhập
         userInput.addEventListener('paste', (e) => {
             const files = Array.from(e.clipboardData?.files || []).filter(f => f.type.startsWith('image/'));
             if (files.length) { e.preventDefault(); handleFiles(files); }
         });
-        // Kéo thả ảnh vào khung chat
         ['dragenter', 'dragover'].forEach(ev => chatCard.addEventListener(ev, (e) => {
             if (e.dataTransfer?.types?.includes('Files')) { e.preventDefault(); chatCard.classList.add('drop-active'); }
         }));
@@ -2027,7 +2048,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
             e.preventDefault();
             handleFiles(Array.from(e.dataTransfer.files));
         });
-        // ====================== CAMERA ======================
         const cameraModal = document.getElementById('camera-modal');
         const cameraVideo = document.getElementById('camera-video');
         const cameraError = document.getElementById('camera-error');
@@ -2066,7 +2086,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
             }
         }
         function openCamera() {
-            // Không có getUserMedia (HTTP thường, trình duyệt cũ) → dùng camera hệ thống
             if (!navigator.mediaDevices?.getUserMedia || !window.isSecureContext) {
                 cameraFallback.click();
                 return;
@@ -2093,7 +2112,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !cameraModal.classList.contains('hidden')) closeCamera();
         });
-        // ====================== CHAT ======================
         let chatHistory = [];   // nhớ ngữ cảnh các lượt trước (chỉ chữ)
         let sending = false;
         async function sendMessage() {
@@ -2171,7 +2189,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
                 const styleLine = (window.traceAIStyleLine && window.traceAIStyleLine()) || '';
                 if (styleLine) systemPrompt += '\n- PHONG CÁCH NÓI CHUYỆN do người dùng chọn (ưu tiên hơn các dòng về giọng văn ở trên, nhưng vẫn phải chính xác và hữu ích): ' + styleLine;
             }
-            // Luôn lấy tên hiển thị từ tài khoản đang đăng nhập; không dùng biệt danh riêng.
             const accountName = window.traceAuth && typeof window.traceAuth.name === 'function'
                 ? String(window.traceAuth.name() || '').trim() : '';
             if (accountName) {
@@ -2274,7 +2291,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
                 return text;
             }
         }
-        // === HIỂN THỊ ===
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
@@ -2297,10 +2313,8 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
                     });
                 }
             } catch (err) {
-                // Nếu một biểu thức không hợp lệ, giữ nguyên biểu thức để người học còn đọc/sửa được.
                 return `<span class="trace-math-fallback" title="Công thức chưa thể dựng bằng LaTeX">${escapeHtml(source)}</span>`;
             }
-            // Chưa tải xong KaTeX: đánh dấu để dựng lại tự động khi thư viện sẵn sàng.
             return `<span class="trace-math-pending" data-display="${display ? 'block' : 'inline'}" data-tex="${traceMathEscapeAttr(source)}">${escapeHtml(source)}</span>`;
         }
         function traceHydratePendingMath(root = document) {
@@ -2329,7 +2343,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
                 }
             });
         }
-        // KaTeX có thể tải chậm hoặc bị chặn bởi CDN; thử CDN dự phòng một lần.
         window.addEventListener('trace-katex-ready', () => traceHydratePendingMath(document));
         window.addEventListener('trace-katex-failed', () => {
             if (window.katex || window.__traceKatexFallbackTried) return;
@@ -2346,7 +2359,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
             });
             document.head.appendChild(fallback);
         });
-        // Rà cả nội dung mới được thêm vào chat, quiz, sơ đồ hay phần lộ trình.
         if (document.body && window.MutationObserver) {
             const traceMathObserver = new MutationObserver(records => {
                 if (!window.katex) return;
@@ -2358,7 +2370,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
         }
         function formatContent(text) {
             text = String(text ?? '');
-            // Tránh phân tích lại cùng một phản hồi; các placeholder LaTeX chưa tải xong sẽ được dựng bù bởi observer.
             const cached = formattedMessageCache.get(text);
             if (cached !== undefined) return cached;
             const stash = [];
@@ -2367,36 +2378,27 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
             const inline = (_, tex) => keep(traceRenderMath(tex, false));
             let s = text;
 
-            // 1) Bảo vệ code trước: dấu $, # và dấu gạch chéo trong code không phải công thức.
             s = s.replace(/```(?:([\w+-]*)\n)?([\s\S]*?)```/g, (_, lang, code) => {
                 const label = lang ? `<div class="text-xs opacity-75 mb-1">${escapeHtml(lang)}</div>` : '';
                 return keep(`<pre>${label}<code>${escapeHtml(code.replace(/^\n|\n$/g, ''))}</code></pre>`);
             });
             s = s.replace(/`([^`\n]+)`/g, (_, code) => keep(`<code>${escapeHtml(code)}</code>`));
 
-            // 2) Một số mô hình xuất ra \\( ... \\) hoặc \\[ ... \\] với dấu gạch chéo bị nhân đôi.
-            // Chuẩn hóa chỉ các dấu phân cách; phần code đã được bảo vệ phía trên.
             s = s.replace(/\\\\(\(|\)|\[|\])/g, (_, delimiter) => '\\' + delimiter);
-            // Dấu đô-la đã escape là văn bản, không phải dấu mở/đóng công thức.
             s = s.replace(/\\\$/g, () => keep('$'));
 
-            // 3) Dựng công thức theo thứ tự dài trước, để $$...$$ không bị hiểu nhầm là $...$.
             s = s.replace(/\$\$([\s\S]+?)\$\$/g, block);
             s = s.replace(/\\\[([\s\S]+?)\\\]/g, block);
             s = s.replace(/\\\(([\s\S]+?)\\\)/g, inline);
-            // Một số câu trả lời bỏ quên dấu $$ quanh các môi trường toán đứng riêng.
             s = s.replace(/\\begin\{(equation\*?|align\*?|gather\*?|multline\*?|aligned|gathered|cases|array|matrix|pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix|split)\}([\s\S]*?)\\end\{\1\}/g,
                 (whole, environment, body, offset, completeText) => {
                     const before = completeText.slice(0, offset);
                     const after = completeText.slice(offset + whole.length);
-                    // Nếu môi trường nằm trong $...$, để bộ phân tích inline xử lý trọn biểu thức.
                     if (/\$\s*$/.test(before) && /^\s*\$/.test(after)) return whole;
                     return keep(`<div class="math-block">${traceRenderMath(whole, true)}</div>`);
                 });
-            // Công thức nội dòng: chấp nhận khoảng trắng sát dấu $ nhưng không nhầm $5 and $10 là công thức.
             s = s.replace(/\$\s*([^\s$](?:[^$\n]*?[^\s$])?)\s*\$(?!\d)/g, inline);
 
-            // 4) Escape phần văn bản bình thường rồi mới áp dụng Markdown cơ bản.
             s = escapeHtml(s);
             const sizes = ['1.35rem', '1.2rem', '1.1rem', '1rem', '1rem', '1rem'];
             let out = '';
@@ -2411,7 +2413,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
                 }
             }
             out = out.replace(/<br>$/, '');
-            // 5) Trả lại các đoạn code/công thức đã dựng, không đưa cú pháp LaTeX qua bộ Markdown.
             const html = out.replace(/\uE000(\d+)\uE001/g, (_, index) => stash[Number(index)] ?? '');
             if (formattedMessageCache.size >= 24) formattedMessageCache.delete(formattedMessageCache.keys().next().value);
             formattedMessageCache.set(text, html);
@@ -2449,7 +2450,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
                 if (sb) sb.addEventListener('click', () => toggleSpeak(content));
             }
             chatMessages.appendChild(div);
-            // Cuộn ở frame tiếp theo để tránh ép browser tính lại layout ngay khi thêm tin.
             if (!chatMessages.dataset.scrollQueued) {
                 chatMessages.dataset.scrollQueued = '1';
                 requestAnimationFrame(() => {
@@ -2481,7 +2481,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
             return id;
         }
         function removeLoading(id) { document.getElementById(id)?.remove(); }
-        // ====================== GIỌNG NÓI ======================
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         const synth = window.speechSynthesis;
         const micBtn = document.getElementById('mic-btn');
@@ -2513,7 +2512,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
             control.addEventListener('change', () => setSpeechRate(control.value));
         });
         function setVoiceStatus(t) { voiceStatus.textContent = t || ''; }
-        // ---- Chuyển nội dung thành văn bản dễ đọc thành tiếng ----
         function mathToSpeech(tex) {
             return ' ' + tex
                 .replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, '$1 chia $2')
@@ -2546,7 +2544,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
                 .replace(/https?:\/\/\S+/g, ' đường dẫn ')
                 .replace(/[ \t]+/g, ' ').replace(/\n{2,}/g, '\n').trim();
         }
-        // Chia nhỏ để trình duyệt không bị cắt giữa chừng khi đọc câu dài
         function splitForSpeech(t) {
             const pieces = [];
             t.replace(/([.!?…]+)\s+/g, '$1\n').split('\n').forEach(line => {
@@ -2574,7 +2571,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
             const norm = (v) => v.lang.replace('_', '-').toLowerCase();
             return vs.find(v => norm(v) === lang.toLowerCase()) || vs.find(v => norm(v).startsWith(lang.slice(0, 2).toLowerCase())) || null;
         }
-        // Dọn văn bản tiếng Anh trước khi đọc
         function toSpeakableEn(text) {
             return text
                 .replace(/```[\s\S]*?```/g, ' ')
@@ -2631,7 +2627,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
         function toggleSpeak(text) {
             if (isSpeaking) stopSpeaking(); else speak(text);
         }
-        // ---- Nhận dạng giọng nói ----
         function setMicUI(on) { micBtn.classList.toggle('mic-on', on); }
         function stopListening() {
             if (recog) {
@@ -2726,7 +2721,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
         if (!SR) { micBtn.style.opacity = '.5'; }
         if (synth) synth.getVoices();   // nạp sẵn danh sách giọng đọc
         window.addEventListener('beforeunload', () => { if (synth) synth.cancel(); });
-        // ----- Thuật toán đổi dương lịch <-> âm lịch (Hồ Ngọc Đức) -----
         function jdFromDate(dd, mm, yy) {
             const a = Math.floor((14 - mm) / 12);
             const y = yy + 4800 - a;
@@ -2834,12 +2828,10 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
             const monthStart = getNewMoonDay(k + off, tz);
             return jdToDate(monthStart + lunarDay - 1);
         }
-        // ====================== ĐỒNG HỒ, LỊCH, NGÀY LỄ ======================
         const TZ_VN = 7;
         const WD_FULL = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
         const CAN = ['Giáp', 'Ất', 'Bính', 'Đinh', 'Mậu', 'Kỷ', 'Canh', 'Tân', 'Nhâm', 'Quý'];
         const CHI = ['Tý', 'Sửu', 'Dần', 'Mão', 'Thìn', 'Tỵ', 'Ngọ', 'Mùi', 'Thân', 'Dậu', 'Tuất', 'Hợi'];
-        // [ngày, tháng, tên, nghỉ lễ?]
         const SOLAR_HOL = [
             [1, 1, 'Tết Dương lịch', true],
             [14, 2, 'Lễ Tình nhân (Valentine)', false],
@@ -2855,7 +2847,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
             [24, 12, 'Đêm Giáng sinh', false],
             [25, 12, 'Lễ Giáng sinh', false]
         ];
-        // Ngày âm lịch: [ngày, tháng, tên, nghỉ lễ?]
         const LUNAR_HOL = [
             [1, 1, 'Mùng 1 Tết Nguyên Đán', true],
             [2, 1, 'Mùng 2 Tết', true],
@@ -2990,7 +2981,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
             const lu = lunarOf(n.getDate(), n.getMonth() + 1, n.getFullYear());
             return `${WD_FULL[n.getDay()]}, ngày ${n.getDate()}/${n.getMonth() + 1}/${n.getFullYear()}, ${pad(n.getHours())}:${pad(n.getMinutes())} (âm lịch ${lu[0]}/${lu[1]})`;
         }
-        // Tiêu đề thứ trong tuần (Thứ Hai → Chủ nhật)
         calHead.innerHTML = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((t, i) => `<div class="cal-wd${i === 6 ? ' we' : ''}">${t}</div>`).join('');
         calGrid.addEventListener('click', (e) => {
             const b = e.target.closest('.cal-cell');
@@ -3024,7 +3014,6 @@ POST {địa chỉ}/run     ←  {"language":"cpp|python","source":"...","stdin"
         tcTick();
         setInterval(() => { if (!document.hidden) tcTick(); }, 1000);
         document.addEventListener('visibilitychange', () => { if (!document.hidden) tcTick(); });
-        // ====================== NÓI CHUYỆN TIẾNG ANH ======================
         const chatCardEl = document.getElementById('chat-card');
         const enCard = document.getElementById('en-card');
         const enMessages = document.getElementById('en-messages');
@@ -3080,7 +3069,6 @@ STRICT RULES:
 5. Plain text only: no markdown, no headings, no bullet lists, no LaTeX.${enVoice ? '\n6. Your reply will be read aloud, so keep it especially short and conversational.' : ''}
 Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
         }
-        // ---- Hiển thị tin nhắn ----
         function enAddMessage(content, sender) {
             const div = document.createElement('div');
             if (sender === 'sys') {
@@ -3126,7 +3114,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
             enMessages.scrollTop = enMessages.scrollHeight;
             return div;
         }
-        // ---- Chuỗi ngày luyện tập ----
         const dateKey = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
         function renderStreak() {
             const now = new Date();
@@ -3147,7 +3134,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
             store.set('en_last', t);
             renderStreak();
         }
-        // ---- Chủ đề ----
         function dayOfYear(d) {
             return Math.floor((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(d.getFullYear(), 0, 0)) / 86400000);
         }
@@ -3163,7 +3149,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
                 enTopicsEl.appendChild(b);
             });
         }
-        // ---- Gửi tin nhắn ----
         async function enSend(textOverride) {
             if (enSending) return false;
             const text = (typeof textOverride === 'string' ? textOverride : enInput.value).trim();
@@ -3204,7 +3189,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
             return true;
         }
         enForm.addEventListener('submit', (e) => { e.preventDefault(); enSend(); });
-        // ---- Nhận dạng giọng nói tiếng Anh ----
         function enStopListening() {
             if (enRecog) {
                 const r = enRecog;
@@ -3316,7 +3300,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
         const savedLevel = store.get('en_level');
         if (savedLevel && EN_LEVELS[savedLevel]) enLevelSel.value = savedLevel; else enLevelSel.value = 'intermediate';
         enLevelSel.addEventListener('change', () => store.set('en_level', enLevelSel.value));
-        // ---- Chuyển tab ----
         function setMode(mode) {
             stopVoiceMode();
             if (recog) stopListening();
@@ -3336,7 +3319,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
         renderStreak();
         renderEnAuto();
         setMode(store.get('mode') === 'en' ? 'en' : 'qa');
-        // ====================== GIAO DIỆN SÁNG / TỐI ======================
         const themeBtn = document.getElementById('theme-btn');
         function currentTheme() { return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
         function applyTheme(t, save) {
@@ -3349,15 +3331,12 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
         }
         themeBtn.addEventListener('click', () => { applyTheme(currentTheme() === 'dark' ? 'light' : 'dark', true); if (window.refreshSkinFX) window.refreshSkinFX(); });
         applyTheme(currentTheme(), false);
-        // Nếu chưa tự chọn, tự đổi theo hệ điều hành khi người dùng đổi chế độ máy
         if (window.matchMedia) {
             const mq = window.matchMedia('(prefers-color-scheme: dark)');
             const onSys = (e) => { if (false) applyTheme(e.matches ? 'dark' : 'light', false); };
             if (mq.addEventListener) mq.addEventListener('change', onSys);
         }
 
-        // ==================== TRACE AI: CHẾ ĐỘ HỌC BỔ SUNG ====================
-        // Khối cấu hình API, MODELS, callAI() và callModel() phía trên được giữ nguyên.
         const TRACE_MODE_META = {
             qa: { label: 'Hỏi đáp kiến thức', emoji: '💬', title: 'Trace AI — Hỏi đáp kiến thức', subtitle: 'Đặt câu hỏi bằng tiếng Việt, gửi ảnh bài tập hoặc nói qua micro.', placeholder: 'Đặt câu hỏi bằng tiếng Việt…', prompts: ['Giải thích định luật II Newton bằng ví dụ', 'Giải bài tập trong ảnh này', 'Giải thích từng bước một bài Toán'], instruction: '' },
             en: { label: 'Luyện tiếng Anh', emoji: '🗣️', title: 'Trace AI — Luyện nói tiếng Anh', subtitle: 'Trò chuyện tiếng Anh, chọn trình độ A1–A2, B1–B2 hoặc C1+; AI sửa lỗi nhẹ nhàng.', placeholder: 'Type or speak in English…', prompts: [], instruction: '' },
@@ -3376,8 +3355,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
         if (!TRACE_MODE_META[traceMode]) traceMode = 'qa';
         let traceLastQuestion = '';
         let tracePendingMode = traceMode;
-        // Mỗi chế độ có khung hội thoại và ngữ cảnh AI riêng. Chỉ lưu phần HTML
-        // trong phiên hiện tại; không đổi theme hay cấu hình API.
         const traceChatViewModes = ['qa', 'debug', 'learnfix'];
         const traceModeViews = { qa: chatMessages.innerHTML };
         const traceModeHistories = { qa: chatHistory };
@@ -3423,8 +3400,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
             }
             if (previous === 'quiz' && mode !== 'quiz') traceQuizStopTimer();
 
-            // Lưu riêng lịch sử hình ảnh/nội dung của chế độ đang rời khỏi.
-            // Không lưu màn hình Lộ trình/Bài kiểm tra như thể chúng là hội thoại.
             if (previous !== mode && traceChatViewModes.includes(previous)) {
                 traceModeViews[previous] = chatMessages.innerHTML;
                 traceModeHistories[previous] = chatHistory;
@@ -3449,7 +3424,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
             const speakRoot = document.getElementById('trace-speak-root');
             if (speakRoot) speakRoot.hidden = mode !== 'speak';
 
-            // English có khung và lịch sử riêng; Quiz cũng có giao diện riêng.
             const fyIdle = false;
             chatCard.style.display = (fyIdle || mode === 'quiz' || mode === 'en' || mode === 'memo' || mode === 'replay' || mode === 'writing' || mode === 'speak') ? 'none' : '';
             traceWelcomeTitle.textContent = meta.title;
@@ -3495,8 +3469,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
                         } else if (mode === 'replay') {
                 if (window.traceReplayShow) window.traceReplayShow();
             } else if (mode !== 'en') {
-                // Khi bấm lại tab đang mở, giữ nguyên nội dung hiện tại; chỉ khôi phục
-                // snapshot khi thật sự chuyển chế độ hoặc khởi tạo trang lần đầu.
                 const keepCurrentView = previous === mode && traceModeInitialized;
                 if (!Object.prototype.hasOwnProperty.call(traceModeViews, mode)) {
                     traceModeViews[mode] = traceBuildModeWelcome(mode);
@@ -3515,7 +3487,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
             tab.addEventListener('click', () => traceSetMode(mode));
         });
 
-        // Thêm hướng dẫn theo chế độ ở lớp điều phối, không chỉnh sửa MODELS hay logic gọi API gốc.
         const traceOriginalCallAI = callAI;
         callAI = async function(question, images = [], spoken = false) {
             const activeMode = traceMode;
@@ -3562,7 +3533,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
             if (sender === 'ai') traceRecordAnswer(tracePendingMode, traceLastQuestion, content);
         };
 
-        // Đọc sơ đồ từ code block, gạch đầu dòng, số thứ tự hoặc ký tự cây.
         function traceParseMindmap(outline) {
             const raw = String(outline || '').replace(/\r/g, '').replace(/\t/g, '  ')
                 .replace(/^[ \t]*```(?:mindmap|markdown|text)?[ \t]*\n?/i, '').replace(/\n?```\s*$/, '');
@@ -3614,7 +3584,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
             return '💡';
         }
         function traceMapIllustration(text, index = 0) {
-            // SVG được nhúng ngay trong file HTML, không tải ảnh từ máy chủ bên ngoài nên không phát sinh lỗi 404.
             const emoji = traceMapEmoji(text);
             const palettes = [ ['#2563EB','#7C3AED'], ['#0891B2','#2563EB'], ['#059669','#0D9488'], ['#D97706','#EA580C'], ['#7C3AED','#DB2777'], ['#0284C7','#4F46E5'] ];
             const colors = palettes[Math.abs(index) % palettes.length];
@@ -3657,7 +3626,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
                 return `${questionHtml}<div class="trace-answer"><button type="button" class="trace-answer-btn" onclick="traceToggleAnswer(this)"><i class="fa fa-eye"></i> Xem đáp án &amp; lời giải</button><div class="trace-answer-body hidden">${answerHtml}</div></div>`;
             }
             const mapParts = [];
-            // AI đôi khi quên rào code hoặc trả về markdown: nhận dạng danh sách có từ 3 nhánh.
             if (tracePendingMode === 'mindmap' && !/```\s*mindmap/i.test(content) && !/^\s*❌/.test(content)) {
                 const rows=content.split('\n');
                 const start=rows.findIndex(line => /^\s*(?:[-*•+]\s+|(?:\d+[.)])\s+|[├└]──)/.test(line));
@@ -3708,8 +3676,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
             renderTraceProgress();
         });
 
-        // ==================== QUIZ TƯƠNG TÁC KIỂU QUIZLET ====================
-        // Gọi lại callAI() có sẵn, không thay đổi MODELS / endpoint / hàm callModel().
         const traceQuizRoot = document.createElement('section');
         traceQuizRoot.id = 'trace-quiz-root';
         traceQuizRoot.className = 'trace-quiz-shell';
@@ -4027,7 +3993,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
             traceQuizRoot.querySelector('[data-quiz-action="progress"]').addEventListener('click', () => traceSetMode('progress'));
         }
 
-        // ==================== GHI NHỚ: SƠ ĐỒ TƯ DUY / FLASHCARD / TÓM LƯỢC ====================
         const traceMemoRoot = document.createElement('section');
         traceMemoRoot.id = 'trace-memo-root';
         traceMemoRoot.className = 'trace-quiz-shell';
@@ -4193,13 +4158,11 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
             }
         }
 
-        // Bật đúng chế độ đã chọn lần trước. API gốc vẫn chạy qua cùng các hàm và endpoint như trước.
         traceSetMode(traceMode);
 
         init();
     </script>
     <script>
-    // ====================== KHO GIAO DIỆN + NỀN HIỆU ỨNG ======================
     (function () {
         const root = document.documentElement;
         const RAR = { common: {t: 'MIỄN PHÍ', c:'#64748B'} };
@@ -4224,13 +4187,11 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
         const byId = (id) => id === 'classic' ? CLASSIC : SKINS.find(s => s.id === id);
         const DEFAULT_ID = 'classic';
         let saved = byId(store.get('skin')) ? store.get('skin') : DEFAULT_ID;
-        // Chỉ bổ sung một lựa chọn hiển thị, không can thiệp cấu hình API hoặc các chế độ V14.
         root.dataset.visual = store.get('trace_visual_style') === 'particles' ? 'particles' : 'normal';
         let shown = saved;
         let filterR = 'all';
         let query = '';
 
-        // ---------- Nền hiệu ứng ----------
         const cv = document.getElementById('fx-canvas');
         let cx = null, worker = null;
         const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -4360,8 +4321,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
             }
             cx.globalAlpha = 1;
         }
-        // Hiệu ứng chuyển động mượt, tự cân bằng FPS theo thiết bị và tải khung hình.
-        // Không gọi thêm timer riêng: chỉ 1 requestAnimationFrame khi tab hiển thị.
         const mobileFX = window.matchMedia && window.matchMedia('(max-width: 720px), (pointer: coarse)').matches;
         let frameBudget = mobileFX ? 40 : 33.34; // 25 FPS trên mobile, 30 FPS desktop; giữ nguyên chuyển động
         let slowFrames = 0, fastFrames = 0;
@@ -4374,7 +4333,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
             const started = performance.now();
             draw(Math.min(elapsed / 16.67, 2.6));
             const work = performance.now() - started;
-            // Tự giảm chất lượng khi máy yếu; phục hồi mượt khi máy đủ nhanh.
             if (work > 12) { slowFrames++; fastFrames = 0; }
             else { fastFrames++; if (slowFrames) slowFrames--; }
             if (slowFrames >= 10) { frameBudget = Math.min(mobileFX ? 55 : 50, frameBudget + 8); slowFrames = 0; }
@@ -4406,7 +4364,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
         window.addEventListener('resize', () => { if (fx.mode === 'none' || resizeFrame) return; resizeFrame = requestAnimationFrame(() => { resizeFrame = 0; if (worker) worker.postMessage({ t: 'size', W: Math.max(1, innerWidth), H: Math.max(1, innerHeight), dpr: Math.min(window.devicePixelRatio || 1, mobileFX ? 1 : 1.15) }); else resize(); }); }, {passive:true});
         document.addEventListener('visibilitychange', () => { if (worker) worker.postMessage({ t: 'run', on: !document.hidden }); else if (document.hidden) stopLoop(); else startLoop(); });
 
-        // ---------- Áp dụng skin ----------
         function apply(id) {
             const s = byId(id) || byId(DEFAULT_ID);
             if (s.id === 'classic') root.removeAttribute('data-skin');
@@ -4418,7 +4375,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
             if (tb) { tb.innerHTML = root.dataset.theme === 'dark' ? '<i class="fa fa-sun-o text-primary text-lg"></i>' : '<i class="fa fa-moon-o text-primary text-lg"></i>'; tb.title = 'Chuyển sáng / tối'; tb.setAttribute('aria-label', 'Chuyển sáng / tối'); }
         }
 
-        // ---------- Giao diện kho ----------
         const modal = document.getElementById('sk-modal');
         const grid = document.getElementById('sk-grid');
         const levelsEl = document.getElementById('sk-levels');
@@ -4503,7 +4459,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
         document.getElementById('tab-themes').addEventListener('click', openShop);
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) closeShop(); });
 
-        // Nút chuyển qua lại hai kiểu nền, lưu lựa chọn để lần mở sau vẫn giữ nguyên.
         const visualButtons = Array.from(document.querySelectorAll('[data-visual-choice]'));
         function syncVisualButtons() {
             visualButtons.forEach(b => {
@@ -4611,7 +4566,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
     showToast('Nếu bạn đang nói mà chưa hiện chữ: micro chưa thu được âm thanh. Hãy kiểm tra micro mặc định của máy (không bị tắt tiếng/đúng micro), bấm biểu tượng ổ khóa trên thanh địa chỉ → Micro để chọn đúng micro, hoặc dùng tai nghe.', false);
   };
   try { const _u = updateSpeakUI; updateSpeakUI = function (on) { if (!on) window.__ttsEnd = Date.now(); return _u.apply(this, arguments); }; } catch (e) {}
-  // Lọc tiếng loa: nếu micro thu lại chính câu AI vừa đọc thì bỏ qua (không coi là bạn đang nói)
   ASR.isEcho = function (t, ref) {
     if (!ref) return false;
     const speaking = !!(window.speechSynthesis && speechSynthesis.speaking);
@@ -4667,7 +4621,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
       if (interim) { finals.push(interim); interim = ''; }
       if (noTrackRetry && !heard && !fatal && !stopped) { noTrackRetry = false; track = null; if (go()) return; return; }
       const sil = o.silence(), now = Date.now();
-      // Trình duyệt tự ngắt khi bạn ngừng lấy hơi → nghe tiếp cho đến khi im lặng thật sự (không cắt câu giữa chừng)
       if (!fatal && !stopped && tries < 12 && now - t0 < 60000 && (heard ? now - lastAt < sil : now - t0 < 9000)) { tries++; if (go()) return; return; }
       clearInterval(dia); MIC.release();
       o.set(null); o.onEnd();
@@ -4968,7 +4921,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
   const $ = id => document.getElementById(id);
   const root = document.documentElement;
 
-  // ---------- Nút ẩn/hiện Lịch & Giọng nói (cạnh nút sáng/tối) ----------
   const sideBtn = $('side-btn');
   function setSide(show, save) {
     root.classList.toggle('side-off', !show);
@@ -4982,7 +4934,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
   function setVoiceUI() { root.classList.remove('voice-off'); }
   sideBtn.addEventListener('click', () => setSide(root.classList.contains('side-off'), true));
 
-  // ---------- Bảng nói chuyện ----------
   const vo = $('vo'), orb = $('vo-orb'), core = $('vo-core'), glow = $('vo-glow'), stEl = $('vo-status'),
         cap = $('vo-cap'), chip = $('vo-chip'), muteB = $('vo-mute'), endB = $('vo-end'), hint = $('vo-hint');
   const MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
@@ -5075,7 +5026,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
     try { if (V.opener && V.opener.focus) V.opener.focus({ preventScroll: true }); } catch (e) {}
   }
 
-  // ---------- Nối vào luồng nói chuyện có sẵn ----------
   const stopMic = () => { if (V.kind === 'conv') { if (X && X.stopMic) X.stopMic(); } else if (V.kind === 'en') enStopListening(); else stopListening(); };
   const clearStatus = () => { if (V.kind === 'conv') return; if (V.kind === 'en') setEnStatus(''); else setVoiceStatus(''); };
   const startMic = () => { if (V.kind === 'conv') { if (X && X.startMic) X.startMic(); } else if (V.kind === 'en') enListen(); else listen(); };
@@ -5123,7 +5073,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
   });
   document.addEventListener('keydown', e => { if (V.open && e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); endVoice(); } }, true);
 
-  // Mở bảng từ các nút
   if (talkBtn) talkBtn.addEventListener('click', () => openVoice('vi'));
   window.enStartVoice = (function (orig) {
     return function () {
@@ -5136,7 +5085,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
   })(enStartVoice);
   window.stopVoiceMode = (function (orig) { return function () { const r = orig.apply(this, arguments); if (V.open && V.kind === 'vi') hide(); return r; }; })(stopVoiceMode);
   window.enStopVoice = (function (orig) { return function () { const r = orig.apply(this, arguments); if (V.open && V.kind === 'en') hide(); return r; }; })(enStopVoice);
-  // Khi đang tắt micro thì không tự bật nghe lại sau khi AI nói xong
   window.listen = (function (orig) {
     return function () {
       if (V.open && V.kind === 'vi' && V.muted) { setVoiceStatus(''); V.phase = 'idle'; render(); return; }
@@ -5150,7 +5098,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
     };
   })(enListen);
 
-  // Trạng thái lấy từ chính dòng trạng thái của app
   function fromStatus(t) { return /nghe/i.test(t) ? 'listening' : /suy nghĩ/i.test(t) ? 'thinking' : /trả lời/i.test(t) ? 'speaking' : null; }
   [['voice-status', 'vi'], ['en-status', 'en']].forEach(([id, kind]) => {
     new MutationObserver(() => {
@@ -5159,7 +5106,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
       if (p) { if (p === 'listening') V.seen = ''; setPhase(p); }
     }).observe($(id), { childList: true, characterData: true, subtree: true });
   });
-  // speak() báo từng câu đang đọc + nhịp để quả cầu đập theo giọng
   window.VO = {
     say(text) { if (!V.open) return; V.phase = 'speaking'; render(); setCap('ai', text); },
     pulse
@@ -5178,7 +5124,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
   };
   window.addEventListener('pagehide', () => { if (V.open) endVoice(); });
 
-  // ---------- Khôi phục lựa chọn ẩn/hiện đã lưu ----------
   setSide(store.get('ui_side') !== '0', false);
   setVoiceUI();
   (function () { const m = document.querySelector('.en-meta'), r = $('en-reset'); if (m && r) m.appendChild(r); })();
@@ -5388,7 +5333,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
       speak(t, null, 'vi-VN');
       return;
     }
-    // Sang câu/thẻ khác thì dừng đọc câu cũ
     if (e.target.closest('[data-quiz-action],[data-quiz-option],[data-fc-act]') && isSpeaking && active) stopSpeaking();
   }, true);
   function add(host, key, extra) {
@@ -5413,7 +5357,6 @@ Current topic: ${enTopic ? enTopic.en : 'anything the learner likes'}.`;
   const queue = () => { if (q) return; q = requestAnimationFrame(() => { q = 0; scan(); }); };
   [typeof traceQuizRoot !== 'undefined' ? traceQuizRoot : null, typeof traceMemoRoot !== 'undefined' ? traceMemoRoot : null]
     .filter(Boolean).forEach(r => new MutationObserver(queue).observe(r, { childList: true, subtree: true }));
-  // Đổi chế độ thì dừng đọc
   if (typeof traceSetMode === 'function') {
     const orig = traceSetMode;
     traceSetMode = function () { try { stopSpeaking(); } catch (e) {} return orig.apply(this, arguments); };
@@ -5755,7 +5698,6 @@ function parse(src,py){
     if(py&&e.t==='list'||e.t==='call'&&py)throw new Unsup('câu lệnh gọi hàm "'+(e.n||'')+'" đứng riêng (chỉ hỗ trợ print/gán)',line);
     throw new Syn('Câu lệnh không hợp lệ hoặc chưa được hỗ trợ (gặp '+near()+')',line);
   }
-  // ---- C++ statements
   function cblock(){
     if(is('{')){p++;const b=[];while(!is('}')){if(pk().k==='eof')throw new Syn('Thiếu dấu "}" đóng khối',pk().line);const s=cstmt();if(s)b.push(s)}p++;return b}
     const s=cstmt();return s?[s]:[];
@@ -5781,10 +5723,8 @@ function parse(src,py){
       if(t.v==='return'){p++;if(!is(';'))expr();ex(';');return{t:'ret',line}}
       if(t.v==='else')throw new Syn('"else" không có "if" đi trước',line);
     }
-    // 'for (int x : a)' detection inside for-head is handled by Syn above
     const s=simple();ex(';');return s;
   }
-  // ---- Python statements
   function suite(){
     ex(':');
     if(pk().k==='nl'){p++;if(pk().k!=='ind')throw new Syn('Cần một khối thụt lề sau dấu ":"',pk().line);p++;
@@ -5818,7 +5758,6 @@ function parse(src,py){
     if(pk().k==='nl')p++;
     return s;
   }
-  // ---- chương trình
   const prog={globals:[],main:null,py};
   if(py){const b=[];while(pk().k!=='eof'){const s=pstmt();if(s)b.push(s)}prog.main=b}
   else{
@@ -5842,7 +5781,6 @@ function parse(src,py){
   return prog;
 }
 
-// ================= Mô phỏng =================
 const bnorm=r=>(r>=-9007199254740991n&&r<=9007199254740991n)?Number(r):r,isBig=v=>typeof v==='bigint',nI=v=>v.k==='c'?BigInt(v.v.charCodeAt(0)):BigInt(v.v);
   const I=(v,L)=>({k:'i',v,L:!!L}),Fl=v=>({k:'f',v}),B=v=>({k:'b',v:!!v}),S=v=>({k:'s',v}),C=v=>({k:'c',v});
 function g(v,pr){
@@ -6085,7 +6023,6 @@ function simulate(src,lang,stdin,opts){
     }
     R('Hàm chưa hỗ trợ: '+f);
   }
-  // ---- gán / ép kiểu theo kiểu khai báo (C++)
   function coerce(ty,v,n){
     switch(ty){
       case'int':case'long long':{
@@ -6114,7 +6051,6 @@ function simulate(src,lang,stdin,opts){
     if(base.k==='s'){if(py)R("TypeError: chuỗi không cho phép gán từng ký tự",lhs.line);base.v=base.v.slice(0,i)+(v.k==='c'?v.v:String.fromCharCode(num(v)))+base.v.slice(i+1);return}
     base.v[i]=py?v:coerce(base.et,v);
   }
-  // ---- thực thi
   const lbl=(tag,d)=>(tag?tag+': ':'')+d;
   function show(n,sub,lhs){
     switch(n.t){
@@ -6541,7 +6477,6 @@ function ensureApi(){
   if(!CONFIG.isConfigured){setMsg('wn','Bạn chưa kết nối API. Hãy bấm “Cấu Hình API”, lưu khóa rồi quay lại.');settingsBtn.click();return false}
   return true;
 }
-// ---- Kiểm tra trích dẫn & dựng bản sửa một cách xác định
 function locate(text,raw,allowed){
   const spans=[],rej=[];let out=0;
   for(const e of raw){
@@ -6652,7 +6587,6 @@ function submitPractice(){
   const cats={};P.qs.forEach((q,i)=>{const c=cats[q.cat]||(cats[q.cat]={c:0,t:0});c.t++;if(P.ans[i]===q.a)c.c++});
   const d=load();d.practice.push({id:A.id,t:Date.now(),cats});save(d);render();
 }
-// ---- Lịch sử: số liệu tính trực tiếp từ dữ liệu đã lưu
 function dens(e,k){return e.w?((k?(e.cats[k]||0):e.n)/e.w)*100:0}
 function trend(d,k){
   const es=d.essays,tot=es.reduce((s,e)=>s+(e.cats[k]||0),0),pr=d.practice.reduce((s,p)=>{const c=p.cats[k];return c?{c:s.c+c.c,t:s.t+c.t}:s},{c:0,t:0});
@@ -6741,7 +6675,6 @@ const LV={A1:'very simple words, sentences under 10 words',A2:'simple everyday w
 const REC=(typeof SR!=='undefined'&&SR)?SR:(window.SpeechRecognition||window.webkitSpeechRecognition||null);
 const TTS=!!(window.speechSynthesis&&window.SpeechSynthesisUtterance);
 let S=null,rec=null,wd=0,micDenied=false;
-// ---- hỗ trợ trình duyệt
 (function(){
   const m=[];
   if(!REC)m.push('Trình duyệt này <b>chưa hỗ trợ nhận diện giọng nói</b> (hãy dùng Chrome, Edge hoặc Safari). Bạn vẫn luyện được bằng <b>chế độ nhập văn bản</b> bên dưới.');
@@ -6767,7 +6700,6 @@ function setState(s){
   if(s!=='listening')$('sp-interim').textContent='';
   if(S.call)callSync(s);
 }
-// ---- đọc thành tiếng (dùng lại speak() sẵn có của Trace AI)
 function say(text,after){
   clearTimeout(wd);
   if(S&&S.call&&window.VOX&&VOX.isOpen())VOX.cap('ai',text);
@@ -6778,7 +6710,6 @@ function say(text,after){
   try{speak(text,fin,'en-US')}catch(e){fin()}
 }
 function stopSay(){clearTimeout(wd);try{stopSpeaking()}catch(e){}if(S&&S.state==='speaking')setState('ready')}
-// ---- prompt & phân tích phản hồi
 function sys(){
   const f=S.focus,past=S.issues.slice(-4).map(x=>'"'+x.orig+'" ('+x.pattern+')').join('; ');
   return `You are an English conversation partner for a Vietnamese student. Scenario/topic: ${TOPICS[S.topic]}. CEFR level: ${S.level} (${LV[S.level]}).
@@ -6815,7 +6746,6 @@ function checkIssue(o,said){
   const cat=CATS[i.category]?i.category:'other',pattern=String(i.pattern||'').trim().slice(0,60)||CATS[cat];
   return{orig,model,hint,why:String(i.why_vi||'').trim(),cat,pattern,said,turn:S.turns.length};
 }
-// ---- hội thoại
 function render(){
   const lg=$('sp-log');
   lg.innerHTML=S.log.map((e,i)=>{
@@ -6888,7 +6818,6 @@ function submit(text,via){
   $('sp-text').value='';
   turn(text,via,rp);
 }
-// ---- micro
 function micError(code){
   const M={'not-allowed':'Bạn chưa cho phép dùng micro. Hãy cho phép micro ở biểu tượng ổ khóa trên thanh địa chỉ rồi bấm micro lại — hoặc gõ câu trả lời.','service-not-allowed':'Trình duyệt không cho phép nhận diện giọng nói trên trang này. Hãy dùng ô nhập văn bản.','audio-capture':'Không tìm thấy micro trên thiết bị. Hãy cắm micro hoặc dùng ô nhập văn bản.','network':'Nhận diện giọng nói cần kết nối mạng và đang bị lỗi mạng. Hãy kiểm tra mạng rồi thử lại, hoặc gõ câu trả lời.','language-not-supported':'Trình duyệt không hỗ trợ nhận diện tiếng Anh (en-US).'};
   return M[code]||('Lỗi nhận diện giọng nói ('+esc(code)+'). Bạn có thể thử lại hoặc gõ câu trả lời.');
@@ -6958,7 +6887,6 @@ function mic(){
     err:c=>{if(c==='no-speech')setMsg('wn','Mình chưa nghe thấy giọng nói nào. Hãy bấm micro và nói lại, hoặc gõ câu trả lời.');else setMsg('bad',micError(c.replace(/^start:.*/,'start')))},
     done:t=>{if($('sp-auto').checked)submit(t,'voice');else{$('sp-text').value=t;$('sp-text').dataset.via='voice';setMsg('','Kiểm tra lại chữ rồi bấm “Gửi”.')}}});
 }
-// ---- phiên
 async function start(call){
   if(call&&(!REC||!window.VOX)){const e=$('sp-support');e.className='we-msg wn';e.innerHTML='Trình duyệt chưa hỗ trợ nhận diện giọng nói nên chưa gọi được. Hãy dùng “Luyện bằng chữ”.';return}
   if(!api())return;
@@ -7030,7 +6958,6 @@ Write feedback in VIETNAMESE based ONLY on evidence in these utterances. Return 
   }catch(e){$('sp-ai').textContent='Không tạo được nhận xét AI ('+(e.message||e)+'). Các số liệu thực tế ở trên vẫn đúng.'}
 }
 function parse2(raw){let t=String(raw||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();try{return JSON.parse(t)}catch(_){const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<=a)throw new Error('JSON không hợp lệ');return JSON.parse(t.slice(a,b+1))}}
-// ---- Cuộc gọi: dùng bảng gọi (quả cầu) có sẵn của Trace AI
 const fbEl=document.createElement('div');fbEl.id='sp-vofb';fbEl.className='sp-vofb';fbEl.hidden=true;
 (document.getElementById('vo')||document.body).appendChild(fbEl);
 function hideCallFb(){fbEl.hidden=true;fbEl.innerHTML=''}
@@ -7080,7 +7007,6 @@ function callOrb(d){
   else if((d==='idle'||d==='starting')&&S.state==='ready'&&!VOX.muted())callListen();
 }
 function finishCall(){stopRec(true);stopSay();finish()}
-// ---- sự kiện
 $('sp-start').addEventListener('click',()=>start(false));$('sp-call').addEventListener('click',()=>start(true));if(!REC)$('sp-call').hidden=true;
 $('sp-end').addEventListener('click',finish);
 (function(){const a=$('sp-accent');if(!a)return;a.value=(window.store&&store.get('en_accent'))||'en-US';if(!a.value)a.value='en-US';a.addEventListener('change',()=>{try{store.set('en_accent',a.value)}catch(e){}})})();
@@ -7095,7 +7021,6 @@ $('sp-log').addEventListener('click',e=>{
   else if(a==='again'){if(REC)mic();else{$('sp-text').focus();setMsg('wn','Chưa có nhận diện giọng nói — hãy gõ câu nói lại vào ô bên dưới.')}}
   else if(a==='skip'){S.skipped++;S.repair.fb.f.skipped=true;S.repair=null;render()}
 });
-// rời tab: dừng micro và giọng đọc
 new MutationObserver(()=>{if(root.hidden){stopRec(true);clearTimeout(wd);if(S&&S.call&&window.VOX&&VOX.isOpen())VOX.close();if(S){if(S.state==='listening'||S.state==='speaking')setState('ready')}}}).observe(root,{attributes:true,attributeFilter:['hidden']});
 window.traceSpeakShow=function(){};
 })();
@@ -7688,7 +7613,6 @@ renderAll();
   window.traceEnHub=function(mode){if(prev)prev(mode);sync(mode)};
   tab.addEventListener('click',()=>{if(window.traceGoMode)window.traceGoMode(window.__codeSub||'debug')});
   hub.addEventListener('click',e=>{const b=e.target.closest('button[data-sub]');if(b&&window.traceGoMode)window.traceGoMode(b.dataset.sub)});
-  // Đồng bộ trạng thái ngay khi tải trang (traceSetMode ban đầu chạy trước script này)
   try{if(typeof traceMode==='string'){if(prev)prev(traceMode);sync(traceMode)}}catch(e){}
 })();
 </script>
@@ -7971,7 +7895,7 @@ const NEW_META={
  vocab:{label:'Từ vựng',emoji:'📖',title:'Trace AI — Từ vựng',subtitle:'Tạo danh sách từ vựng theo chủ đề và lưu thành bộ thẻ để ôn.',placeholder:'',prompts:[],instruction:''},
  grammar:{label:'Ngữ pháp',emoji:'📐',title:'Trace AI — Ngữ pháp',subtitle:'Giải thích một điểm ngữ pháp kèm ví dụ và bài tập.',placeholder:'',prompts:[],instruction:''},
  compose:{label:'Luyện viết',emoji:'✍️',title:'Trace AI — Luyện viết',subtitle:'AI ra đề viết, bạn viết bài, AI chấm và gợi ý sửa lỗi.',placeholder:'',prompts:[],instruction:''},
- flash:{label:'Flashcard',emoji:'🃏',title:'Trace AI — Flashcard',subtitle:'Tạo thẻ hỏi–đáp, lưu thành bộ thẻ và ôn theo lịch.',placeholder:'',prompts:[],instruction:''},
+ flash:{label:'Ôn tập',emoji:'🃏',title:'Trace AI — Ôn tập',subtitle:'Flashcard, ôn lỗi sai và ôn kiến thức đã học trong một nơi.',placeholder:'',prompts:[],instruction:''},
  mistakes:{label:'Ôn lỗi sai',emoji:'🩹',title:'Trace AI — Ôn lỗi sai',subtitle:'Ôn lại lỗi đã phân tích ở Sửa lỗi kiến thức, Luyện viết và Sửa lỗi tiếng Anh.',placeholder:'',prompts:[],instruction:''},
  knowledge:{label:'Ôn kiến thức đã học',emoji:'📘',title:'Trace AI — Ôn kiến thức đã học',subtitle:'Ôn lại sơ đồ tư duy, Feynman, ghi chú và tóm tắt đã tạo.',placeholder:'',prompts:[],instruction:''},
  schedule:{label:'Lịch ôn tập',emoji:'📅',title:'Trace AI — Lịch ôn tập',subtitle:'Xem số mục cần ôn theo ngày và bắt đầu ôn ngay.',placeholder:'',prompts:[],instruction:''},
@@ -7984,14 +7908,14 @@ traceChatViewModes.push('feynman','solve','photo','textbook','codesolve','explai
 const IA=[
  {id:'qa',label:'Hỏi đáp',icon:'💬',subs:[{mode:'qa',label:'Hỏi đáp',icon:'💬'}]},
  {id:'code',label:'Trợ lý Code',icon:'💻',subs:[{mode:'debug',label:'Trợ lý code',icon:'💻'},{mode:'replay',label:'Replay',icon:'▶️'},{mode:'testlab',label:'TestLab',icon:'🧪'}]},
- {id:'study',label:'Học tập',icon:'📚',subs:[{mode:'feynman',label:'Feynman',icon:'🎓'},{mode:'learnfix',label:'Sửa lỗi kiến thức',icon:'🧩'},{mode:'mindmap',label:'Mindmap',icon:'🌳'},{mode:'quiz',label:'Quiz',icon:'📝'},{mode:'notes',label:'Ghi chú',icon:'🗒️'}]},
+ {id:'study',label:'Học tập',icon:'📚',subs:[{mode:'feynman',label:'Feynman',icon:'🎓'},{mode:'learnfix',label:'Sửa lỗi kiến thức',icon:'🧩'},{mode:'quiz',label:'Quiz',icon:'📝'},{mode:'notes',label:'Ghi chú',icon:'🗒️'}]},
  {id:'en',label:'Tiếng Anh',icon:'🇬🇧',subs:[{mode:'speak',label:'Hội thoại',icon:'🗣️'},{mode:'writing',label:'Luyện viết & Sửa lỗi',icon:'✍️'},{mode:'vocab',label:'Từ vựng',icon:'📖'},{mode:'grammar',label:'Ngữ pháp',icon:'📐'}]},
- {id:'review',label:'Smart Review',icon:'🔁',subs:[{mode:'flash',label:'Flashcard',icon:'🃏'},{mode:'mistakes',label:'Ôn lỗi sai',icon:'🩹'},{mode:'knowledge',label:'Ôn kiến thức',icon:'📘'},{mode:'schedule',label:'Lịch ôn tập',icon:'📅'}]},
+ {id:'review',label:'Smart Review',icon:'🔁',subs:[{mode:'flash',label:'Ôn tập',icon:'🃏'},{mode:'mindmap',label:'Mindmap',icon:'🌳'},{mode:'schedule',label:'Lịch ôn tập',icon:'📅'}]},
  {id:'dash',label:'Dashboard',icon:'📊',subs:[{mode:'dashboard',view:'stats',label:'Thống kê',icon:'📈'},{mode:'dashboard',view:'progress',label:'Tiến độ',icon:'🚀'},{mode:'dashboard',view:'goals',label:'Mục tiêu',icon:'🎯'},{mode:'dashboard',view:'history',label:'Lịch sử',icon:'🕘'}]}
 ];
 const GROUP={};IA.forEach(g=>g.subs.forEach(s=>{if(!GROUP[s.mode])GROUP[s.mode]=g.id}));
 const TOOLS={notes:1,vocab:1,grammar:1,compose:1,flash:1,mindmap:1,mistakes:1,knowledge:1,schedule:1,dashboard:1,testlab:1};
-const ALIAS={en:'speak',progress:'dashboard',memo:'mindmap',solve:'qa',photo:'qa',textbook:'qa',codesolve:'debug',explain:'debug',compose:'writing',t3d:'qa'};
+const ALIAS={mistakes:'flash',knowledge:'flash',en:'speak',progress:'dashboard',memo:'mindmap',solve:'qa',photo:'qa',textbook:'qa',codesolve:'debug',explain:'debug',compose:'writing',t3d:'qa'};
 const ROOT_IDS=['trace-quiz-root','trace-memo-root','trace-replay-root','trace-testlab-root','trace-writing-root','trace-speak-root','ia-root','fy-setup','fy-session','feynman-help'];
 let dashView='stats';
 let SESS=null;
@@ -8108,7 +8032,7 @@ VIEWS.compose=()=>{
  return panel('✍️ Luyện viết',`${esc(c.type)} · ${esc(c.level)}`,`<div class="ia-card"><small>ĐỀ</small><div class="ia-front">${esc(c.prompt)}</div>${c.tips&&c.tips.length?`<ul style="margin-top:8px">${c.tips.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:''}</div>`+
   fld('Bài viết của bạn',tarea('ia-cw','Viết bài tại đây…',f?f.essay:'',10),true)+bar(btn('compose-check','✓ Chấm bài'),btn('compose-new','↺ Đề mới','ghost'))+fb);
 };
-VIEWS.flash=()=>{
+const flashPanel=()=>{
  const f=LAST.flash,s=srs();
  const decks=s.decks.map(d=>`<div class="ia-item static" style="flex-direction:row;justify-content:space-between;align-items:center;gap:10px;width:100%"><span><b>${esc(d.name)}</b><br><small>${d.cards.length} thẻ</small></span><span>${btn('flash-study','▶ Ôn bộ này','',d.id)} ${btn('flash-del','🗑','ghost',d.id)}</span></div>`).join('')||'<p class="ia-empty">Chưa có bộ thẻ nào.</p>';
  return panel('🃏 Flashcard','Tạo thẻ hỏi–đáp từ một chủ đề, lưu thành bộ thẻ và ôn theo lịch.',
@@ -8118,6 +8042,7 @@ VIEWS.flash=()=>{
 };
 VIEWS.mistakes=()=>reviewPanel('🩹 Ôn lỗi sai','Lỗi từ Sửa lỗi kiến thức, Luyện viết và Sửa lỗi tiếng Anh.',it=>it.fam==='mistake','mistakes-go');
 VIEWS.knowledge=()=>reviewPanel('📘 Ôn kiến thức đã học','Sơ đồ tư duy, Feynman, ghi chú và tóm tắt đã tạo.',it=>it.fam==='knowledge','knowledge-go');
+VIEWS.flash=()=>`<div style="display:grid;gap:16px">${flashPanel()}${VIEWS.mistakes()}${VIEWS.knowledge()}</div>`;
 VIEWS.schedule=()=>{
  const s=srs(),now=Date.now(),items=allItems(),base=new Date();base.setHours(0,0,0,0);const b0=base.getTime();
  const buckets=Array(14).fill(0);let dueNow=0;
@@ -8295,7 +8220,7 @@ function showMindmap(){
  const mm=$('memo-opt-mindmap');mm.checked=true;mm.closest('label').hidden=false;
  $('trace-memo-count-wrap').hidden=true;
  const h=m.querySelector('.trace-quiz-head h3');if(h)h.textContent='🌳 Tạo sơ đồ tư duy';
- const k=m.querySelector('.trace-quiz-kicker');if(k)k.textContent='Học tập · Mindmap';
+ const k=m.querySelector('.trace-quiz-kicker');if(k)k.textContent='Smart Review · Mindmap';
  const p=m.querySelector('.trace-quiz-head p');if(p)p.textContent='Nhập chủ đề rồi tạo sơ đồ. Sơ đồ được lưu vào Ôn kiến thức đã học.';
  if(window.traceMemoSyncImg)window.traceMemoSyncImg();
 }
@@ -8678,7 +8603,6 @@ html[data-theme="dark"]:not([data-skin]) #acct-modal .ac-who{background:#0f172a}
   var s=' '+t.toLowerCase().replace(/[.,!?]/g,' ')+' ';
   if(NEG.test(s)&&!POS.test(s)){endCall();return}
   if(POS.test(s)&&t.split(/\s+/).length<=4){resume();return}
-  // câu hỏi mới: gửi như bình thường
   asking=false;idleClear();clearTimeout(ansT);ansT=0;userInput.value=t;got='';
   sendMessage().then(function(ok){if(!ok&&voiceMode)stopVoiceMode()});
  }
@@ -9758,7 +9682,6 @@ var CODEBANK = [
       else { var q = PEND[m.mid] = PEND[m.mid] || []; if (q.length < 60) q.push(m.d); }
     }
     else if (t === 'q') {
-      // Ghép trận: 2 người cùng đang tìm (cách nhau ≤ 10 giây) → ID nhỏ hơn làm chủ phòng
       if (F && !F.lock && !inMatch() && Date.now() - F.t0 <= FIND_MS && F.subject === validSubject(m.s || 'en') && sameLv(m, F.subject)) {
         if (SID < m.f) pairHost(m.f);
         else if (!m.x) lobPost({ t: 'q', x: 1, s: F.subject });
@@ -9803,7 +9726,6 @@ var CODEBANK = [
   }
 
   /* ---------- Ghép trận nhanh ---------- */
-  // Hai người đang cùng tìm (cách nhau ≤ 10 giây): ID nhỏ hơn gửi 'mm', người kia đáp 'mmok' → vào trận.
   function pairHost(sid) {
     var f = F; f.lock = true;
     var mid = newMid(), seed = (Math.random() * 4294967296) >>> 0;
