@@ -49,6 +49,7 @@ try{var noop=function(){};['log','info','warn','debug','table','dir','trace'].fo
     <link rel="dns-prefetch" href="https://generativelanguage.googleapis.com"><link rel="dns-prefetch" href="https://api.groq.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <script>
         window.store = {
             get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -10449,5 +10450,521 @@ var CODEBANK = [
   var sb = document.getElementById('settings-btn'); if (sb) sb.addEventListener('click', sync);
 })();
 </script>
+<style id="trace-redesign-v7">
+/* =====================================================================
+   Trace AI · v7 — lớp giao diện mới (CHỈ CSS)
+   Ý tưởng: "bàn học" — giấy chấm điểm (dot-grid) + bút dạ quang.
+   - Không sửa JS / HTML / logic. Mọi thứ dùng biến --sk-* nên các skin cũ vẫn hoạt động.
+   - Đặt TRƯỚC khối cử chỉ (trace-gestures-css) để bottom-sheet trên mobile luôn thắng khi trùng.
+   - Tiền tố :root:root chỉ để nâng độ ưu tiên hơn các luật Tailwind/skin cũ.
+   ===================================================================== */
+
+/* ---------- 1. Token ---------- */
+:root{
+  --tr-font:'Be Vietnam Pro','Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --tr-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --tr-ease:cubic-bezier(.32,.72,0,1);
+  --tr-r-xl:28px;
+  --tr-mark:color-mix(in srgb,var(--sk-accent) 22%,transparent);
+  --tr-mark-solid:color-mix(in srgb,var(--sk-accent) 30%,transparent);
+  --tr-dot:color-mix(in srgb,var(--sk-text) 11%,transparent);
+  --tr-ring:0 0 0 4px var(--sk-glow);
+  --tr-lift:0 1px 2px var(--sk-shadow),0 18px 38px -20px var(--sk-shadow);
+  --tr-lift-sm:0 1px 2px var(--sk-shadow),0 8px 18px -12px var(--sk-shadow);
+}
+
+/* Skin "Cổ điển" — mực xanh trên giấy lạnh, dạ quang vàng làm điểm nhấn */
+html:not([data-skin]){
+  --sk-accent:#2F3DF0;--sk-accent2:#1F2BC8;
+  --sk-grad:linear-gradient(160deg,#4553FF 0%,#2833DD 100%);
+  --sk-surface:#FFFFFF;--sk-surface2:#F2F4FA;--sk-soft:#E7EBFF;
+  --sk-text:#141836;--sk-muted:#5E6584;--sk-border:#E1E5F0;
+  --sk-glass:rgba(255,255,255,.84);--sk-glow:rgba(47,61,240,.16);--sk-shadow:rgba(24,28,70,.13);
+  --sk-on:#fff;--sk-bg:#E9EDF6;
+  --tr-mark:#FFE45C;--tr-mark-solid:#FFE45C;--tr-dot:rgba(24,28,70,.10);
+}
+html[data-theme="dark"]:not([data-skin]){
+  --sk-accent:#8C97FF;--sk-accent2:#6573FF;
+  --sk-grad:linear-gradient(160deg,#5562FF 0%,#3A46E8 100%);
+  --sk-surface:#161A30;--sk-surface2:#1D2240;--sk-soft:#252C5A;
+  --sk-text:#EEF0FF;--sk-muted:#9AA2C8;--sk-border:#2A3058;
+  --sk-glass:rgba(16,19,38,.84);--sk-glow:rgba(140,151,255,.22);--sk-shadow:rgba(0,0,0,.45);
+  --sk-on:#fff;--sk-bg:#0D1024;
+  --tr-mark:rgba(255,228,92,.24);--tr-mark-solid:rgba(255,228,92,.36);--tr-dot:rgba(190,198,255,.10);
+}
+
+/* ---------- 2. Nền & chữ ---------- */
+*{font-family:var(--tr-font)}
+code,pre,kbd,samp{font-family:var(--tr-mono)}
+html:not([data-skin]) body{background:var(--sk-bg);background-attachment:scroll;color:var(--sk-text)}
+body{font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3,h4{letter-spacing:-.02em}
+::selection{background:var(--tr-mark-solid)}
+:root:root .chat-bubble-user::selection,:root:root .chat-bubble-user *::selection{background:rgba(255,255,255,.32)}
+:root:root :focus-visible{outline:2px solid var(--sk-accent);outline-offset:2px}
+:root:root ::-webkit-scrollbar{width:8px;height:8px}
+:root:root:root ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--sk-muted) 38%,transparent);border:2px solid transparent;background-clip:padding-box;border-radius:99px}
+:root:root:root ::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--sk-muted) 60%,transparent);background-clip:padding-box}
+
+/* Skin cổ điển: đưa các màu xanh cứng của Tailwind/khối cũ về token */
+html:not([data-skin]) .gradient-main{background-image:var(--sk-grad);background-color:transparent}
+html:not([data-skin]) .gradient-text{background-image:var(--sk-grad)}
+html:not([data-skin]) .text-primary{color:var(--sk-accent)}
+html:not([data-skin]) .bg-primary{background-color:var(--sk-accent)}
+html:not([data-skin]) .bg-white{background-color:var(--sk-surface)}
+html:not([data-skin]) .bg-neutral-50,html:not([data-skin]) .hover\:bg-neutral-50:hover{background-color:var(--sk-surface2)}
+html:not([data-skin]) .bg-neutral-50\/50{background-color:color-mix(in srgb,var(--sk-surface2) 55%,transparent)}
+html:not([data-skin]) .bg-neutral-100{background-color:var(--sk-surface2)}
+html:not([data-skin]) .bg-neutral-200{background-color:var(--sk-border)}
+html:not([data-skin]) .text-neutral-800,html:not([data-skin]) .text-neutral-700{color:var(--sk-text)}
+html:not([data-skin]) .text-neutral-600,html:not([data-skin]) .text-neutral-500{color:var(--sk-muted)}
+html:not([data-skin]) .text-neutral-400{color:var(--sk-muted);opacity:.75}
+html:not([data-skin]) .border-neutral-100,html:not([data-skin]) .border-neutral-200,html:not([data-skin]) .border-neutral-300{border-color:var(--sk-border)}
+html:not([data-skin]) .focus\:border-primary:focus{border-color:var(--sk-accent)}
+html:not([data-skin]) .hover\:border-primary\/50:hover{border-color:color-mix(in srgb,var(--sk-accent) 45%,transparent)}
+html:not([data-skin]) .input-focus:focus{box-shadow:0 0 0 3px var(--sk-glow)}
+html:not([data-skin]) .model-card{background-color:var(--sk-surface2)!important}
+html:not([data-skin]) .model-card.selected{background-color:var(--sk-soft)!important;border-color:var(--sk-accent)}
+html:not([data-skin]) code{background:var(--sk-soft);color:var(--sk-accent)}
+html:not([data-skin]) pre{background:#10132A;color:#E4E7FF}
+html:not([data-skin]) pre code,html[data-skin] pre code{background:transparent;color:inherit;padding:0;font-size:1em}
+/* Khung soạn code (Code Replay): <pre> và <textarea> cùng thừa hưởng font nên luôn thẳng hàng */
+:root:root .cr-ed,:root:root .cr-ed *{font-family:var(--tr-mono)}
+html:not([data-skin]) select option{background:var(--sk-surface);color:var(--sk-text)}
+html:not([data-skin]) .vbtn{background:var(--sk-surface);border-color:var(--sk-border);color:var(--sk-text)}
+html:not([data-skin]) .vbtn:hover{background:var(--sk-surface2);border-color:var(--sk-accent)}
+html:not([data-skin]) .vbtn.active{background-image:var(--sk-grad);border-color:transparent;color:var(--sk-on)}
+html:not([data-skin]) .vstatus{color:var(--sk-accent)}
+html:not([data-skin]) .speak-btn{background:var(--sk-soft);border-color:var(--sk-border);color:var(--sk-accent)}
+html:not([data-skin]) .speak-btn:hover{background:var(--sk-surface2)}
+html:not([data-skin]) .en-topic{border-color:var(--sk-border);color:var(--sk-text)}
+html:not([data-skin]) .en-topic:hover{background:var(--sk-surface2)}
+html:not([data-skin]) .en-topic.sel{background-image:var(--sk-grad);color:var(--sk-on);border-color:transparent}
+html:not([data-skin]) .cal-cell.sel{border-color:var(--sk-accent)}
+html:not([data-skin]) .cal-cell.today{background-image:var(--sk-grad)}
+html:not([data-skin]) .hol-badge{background:var(--sk-soft);color:var(--sk-accent)}
+html:not([data-skin]) .trace-prompt-chip{background:var(--sk-surface);color:var(--sk-text);border-color:var(--sk-border)}
+html:not([data-skin]) .trace-prompt-chip:hover{background:var(--sk-soft);color:var(--sk-accent)}
+html:not([data-skin]) .trace-stat,html:not([data-skin]) .trace-progress-item{background:var(--sk-surface2);border-color:var(--sk-border)}
+html:not([data-skin]) .trace-stat .n{color:var(--sk-accent)}
+html:not([data-skin]) .trace-mindmap{background:var(--sk-soft);border-color:var(--sk-border)}
+html:not([data-skin]) .trace-mindmap-node{background:var(--sk-surface);color:var(--sk-text);border-color:var(--sk-border)}
+html:not([data-skin]) .trace-answer-body{border-left-color:var(--sk-accent);background:var(--sk-soft)}
+
+pre{border-radius:14px;padding:14px 16px;font-size:.86rem;line-height:1.6;border:1px solid rgba(255,255,255,.06)}
+code{border-radius:6px;padding:.12em .42em;font-size:.88em}
+
+/* ---------- 3. Thanh đầu trang: nổi, gọn, thẳng hàng với nội dung ---------- */
+html body > header.glass.sticky{
+  top:10px;width:min(72rem,calc(100% - 32px));align-self:center;margin:10px 0 0;
+  border:1px solid var(--sk-border);border-radius:22px;background:var(--sk-glass);box-shadow:var(--tr-lift);
+}
+html body > header .container{max-width:none;padding:9px 14px}
+html body > header .w-10.h-10.rounded-xl.gradient-main{
+  position:relative;border-radius:13px;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 6px 14px -6px var(--sk-glow);
+}
+html body > header .w-10.h-10.rounded-xl.gradient-main::after{
+  content:"";position:absolute;right:-4px;bottom:-4px;width:13px;height:13px;border-radius:4px;
+  background:var(--tr-mark);border:2px solid var(--sk-surface);transform:rotate(-9deg);
+}
+html header h1.gradient-text.text-lg{
+  background:none;-webkit-text-fill-color:currentColor;color:var(--sk-text);
+  font-size:1.2rem;font-weight:800;letter-spacing:-.035em;line-height:1.1;
+}
+html body > header p.text-xs{font-size:.74rem;color:var(--sk-muted);margin-top:2px}
+html body > header button.rounded-xl{
+  background:var(--sk-surface2);border:1px solid transparent;border-radius:14px;color:var(--sk-text);box-shadow:none;
+  transition:background-color .2s,border-color .2s,color .2s;
+}
+html body > header button.rounded-xl:hover{background:var(--sk-soft);border-color:color-mix(in srgb,var(--sk-accent) 32%,transparent);box-shadow:none}
+html body > header button.rounded-xl:active{transform:scale(.96)}
+html body > header .hdr-tg.off::after{box-shadow:0 0 0 1.5px var(--sk-surface2)}
+html body > header #settings-btn{background:var(--sk-grad);color:var(--sk-on);font-weight:600;border-color:transparent}
+html body > header #settings-btn:hover{background:var(--sk-grad);filter:brightness(1.08);border-color:transparent}
+html body > header #settings-btn i{color:inherit}
+@media(max-width:480px){
+  html body > header.glass.sticky{top:8px;margin-top:8px;border-radius:20px}
+  html body > header .container{padding:8px 10px}
+  html body > header button.w-10{width:38px;height:38px}
+}
+
+/* ---------- 4. Thanh trạng thái: chip thông báo ---------- */
+:root:root #status-bar{
+  align-self:center;width:fit-content;max-width:min(72rem,calc(100% - 32px));margin:12px 0 0;
+  padding:7px 16px;border-width:1px;border-radius:16px;text-align:left;font-size:.84rem;line-height:1.45;
+}
+
+/* ---------- 5. Tiêu đề trang ---------- */
+:root:root #welcome-section{text-align:left;margin:6px 0 20px;padding:0 4px}
+:root:root #welcome-section h2{
+  background:none;-webkit-text-fill-color:var(--sk-text);color:var(--sk-text);
+  font-size:clamp(1.65rem,3.6vw,2.4rem);line-height:1.14;font-weight:800;letter-spacing:-.035em;
+  max-width:24ch;text-wrap:balance;margin-bottom:10px;
+}
+:root:root #welcome-section p{margin-left:0;margin-right:0;max-width:54ch;color:var(--sk-muted);font-size:1rem;line-height:1.6}
+.app-layout{gap:24px}
+
+/* ---------- 6. Điều hướng chính: thanh tab + vệt dạ quang ---------- */
+:root:root #ia-main{
+  grid-auto-columns:minmax(66px,1fr);gap:4px;padding:5px;border-radius:22px;
+  background:var(--sk-surface);border:1px solid var(--sk-border);box-shadow:var(--tr-lift-sm);
+  overflow-x:auto;scrollbar-width:none;margin-bottom:12px;-webkit-backdrop-filter:none;backdrop-filter:none;
+}
+:root:root #ia-main::-webkit-scrollbar{display:none}
+:root:root #ia-main button{
+  position:relative;isolation:isolate;gap:5px;padding:10px 6px 9px;min-height:56px;border-radius:16px;
+  font-size:.74rem;font-weight:600;letter-spacing:0;color:var(--sk-muted);
+}
+:root:root #ia-main button .ia-ic{font-size:1.28rem}
+:root:root #ia-main button.on{background:transparent;box-shadow:none;color:var(--sk-text);font-weight:700}
+:root:root #ia-main button.on::before{
+  content:"";position:absolute;z-index:-1;left:13%;right:13%;bottom:10px;height:.82em;
+  background:var(--tr-mark);border-radius:3px 6px 4px 7px;transform:rotate(-1.4deg);transform-origin:left center;
+  animation:trMark .5s var(--tr-ease) both;
+}
+@keyframes trMark{from{transform:rotate(-1.4deg) scaleX(0)}to{transform:rotate(-1.4deg) scaleX(1)}}
+@media (hover:hover) and (pointer:fine){
+  :root:root #ia-main button:not(.on):hover{background:var(--sk-surface2);color:var(--sk-text)}
+}
+
+/* ---------- 7. Tab phụ: điều khiển phân đoạn ---------- */
+:root:root #ia-subs{padding:4px;gap:2px;border-radius:17px;background:var(--sk-surface2);border:1px solid var(--sk-border)}
+:root:root .ia-sub{padding:9px 14px;border-radius:13px;font-size:.84rem;font-weight:600;color:var(--sk-muted);background:transparent;box-shadow:none}
+:root:root .ia-sub .ia-sic{filter:none}
+@media (hover:hover) and (pointer:fine){
+  :root:root .ia-sub:not(.on):hover{background:transparent;color:var(--sk-text)}
+}
+:root:root .ia-sub.on{background:var(--sk-surface);color:var(--sk-accent);font-weight:700;box-shadow:0 1px 2px var(--sk-shadow),0 6px 14px -8px var(--sk-shadow)}
+
+/* ---------- 8. Thẻ giới thiệu chế độ ---------- */
+:root:root #trace-mode-info{margin:0 0 12px;padding:12px 14px;border-radius:20px;background:var(--sk-surface);border:1px solid var(--sk-border);box-shadow:none}
+:root:root #trace-mode-emoji{width:38px;height:38px;border-radius:13px;background:var(--sk-soft)}
+:root:root #trace-mode-label{font-size:.95rem;font-weight:700;letter-spacing:-.01em}
+:root:root .trace-prompt-chip{padding:6px 12px;font-size:.78rem;font-weight:600;border-radius:999px}
+
+/* ---------- 9. Khung chat ---------- */
+:root:root #chat-card,:root:root #en-card{
+  border-radius:var(--tr-r-xl);background:var(--sk-surface);border:1px solid var(--sk-border);box-shadow:var(--tr-lift);
+}
+:root:root #chat-messages,:root:root #en-messages{
+  background-color:var(--sk-surface2);
+  background-image:radial-gradient(var(--tr-dot) 1px,transparent 1.3px);
+  background-size:20px 20px;background-attachment:local;
+}
+:root:root #chat-messages .rounded-xl.gradient-main,:root:root #en-messages .rounded-xl.gradient-main{border-radius:13px;box-shadow:none}
+:root:root #chat-messages .rounded-xl.bg-neutral-100,:root:root #en-messages .rounded-xl.bg-neutral-100{border-radius:13px;background:var(--sk-soft)}
+:root:root #chat-messages .rounded-xl.bg-neutral-100 i,:root:root #en-messages .rounded-xl.bg-neutral-100 i{color:var(--sk-accent)}
+:root:root #chat-messages .chat-bubble-ai,:root:root #en-messages .chat-bubble-ai{
+  background:var(--sk-surface);border:1px solid var(--sk-border);border-radius:6px 20px 20px 20px;
+  box-shadow:0 1px 2px var(--sk-shadow);font-size:.97rem;line-height:1.68;
+}
+:root:root #chat-messages .chat-bubble-user,:root:root #en-messages .chat-bubble-user{
+  background-image:var(--sk-grad);border-radius:20px 6px 20px 20px;font-size:.97rem;line-height:1.6;
+  box-shadow:0 10px 22px -12px color-mix(in srgb,var(--sk-accent) 70%,transparent);
+}
+:root:root #chat-messages .chat-bubble-ai h1,:root:root #chat-messages .chat-bubble-ai h2,:root:root #chat-messages .chat-bubble-ai h3{font-weight:700;letter-spacing:-.015em}
+:root:root #en-messages .en-sys{font-size:.8rem}
+
+/* ---------- 10. Khung nhập: một thanh liền ---------- */
+:root:root #chat-card > div:last-child,:root:root #en-card > div:last-child{
+  padding:10px 12px 12px;border-top:1px solid var(--sk-border);background:var(--sk-surface);
+}
+:root:root #chat-form,:root:root #en-form{
+  gap:4px;padding:6px;border-radius:24px;background:var(--sk-surface2);border:1px solid var(--sk-border);
+  transition:border-color .2s,box-shadow .2s,background-color .2s;
+}
+:root:root #chat-form:focus-within,:root:root #en-form:focus-within{border-color:var(--sk-accent);box-shadow:var(--tr-ring);background:var(--sk-surface)}
+:root:root #chat-form > button:not([type="submit"]),:root:root #en-form > button:not([type="submit"]){
+  width:40px;height:40px;border:0;border-radius:16px;background:transparent;color:var(--sk-muted);box-shadow:none;
+}
+:root:root #chat-form > button:not([type="submit"]) i,:root:root #en-form > button:not([type="submit"]) i{color:inherit}
+@media (hover:hover) and (pointer:fine){
+  :root:root #chat-form > button:not([type="submit"]):hover,:root:root #en-form > button:not([type="submit"]):hover{background:var(--sk-soft);color:var(--sk-accent)}
+}
+:root:root #user-input,:root:root #en-input{
+  border:0;border-radius:0;background:transparent;box-shadow:none;outline:none;padding:10px 8px;font-size:1rem;color:var(--sk-text);
+}
+:root:root #user-input:focus,:root:root #en-input:focus{border:0;box-shadow:none;outline:none}
+:root:root #send-btn,:root:root #en-send{width:42px;height:42px;border-radius:17px;border:0}
+:root:root #send-btn:disabled{background:transparent;color:var(--sk-muted);opacity:.5}
+
+:root:root .speech-speed-row{margin:0 0 8px;gap:6px;font-size:.74rem}
+:root:root .speech-speed-select{padding:3px 8px;border-width:1px;border-radius:10px;font-size:.74rem;font-weight:600}
+@media(max-width:640px){:root:root .speech-speed-row > span{display:none}}
+
+/* ---------- 11. Cột bên: đồng hồ, pomodoro, lịch ---------- */
+@media(min-width:1024px){
+  :root:root .app-side{top:92px;max-height:calc(100vh - 108px);padding:2px 4px 16px}
+}
+:root:root #time-card{
+  padding:18px;border-radius:var(--tr-r-xl);background:var(--sk-surface);border:1px solid var(--sk-border);box-shadow:var(--tr-lift-sm);
+}
+:root:root .tc-clock{
+  font-family:var(--tr-mono);font-weight:500;font-size:clamp(1.9rem,4.6vw,2.35rem);letter-spacing:-.05em;
+  background:none;-webkit-text-fill-color:var(--sk-text);color:var(--sk-text);
+}
+:root:root .tc-date{font-weight:600;font-size:.92rem}
+:root:root .pomo{border-radius:18px;background:var(--sk-surface2);border:1px solid var(--sk-border);padding:10px 12px 14px}
+:root:root .pomo-time{font-family:var(--tr-mono);font-weight:600;letter-spacing:-.04em}
+:root:root .pomo-btn{border:0;background:var(--sk-surface);box-shadow:0 1px 2px var(--sk-shadow),0 0 0 1px var(--sk-border)}
+:root:root .pomo-btn.main{background:var(--sk-grad);color:var(--sk-on);box-shadow:0 6px 12px -6px var(--sk-glow)}
+:root:root .cal-navbtn{border-width:1px;border-radius:12px}
+:root:root .cal-grid{gap:2px}
+:root:root .cal-cell{border-width:1.5px;border-radius:13px}
+:root:root .cal-detail{border-radius:16px;background:var(--sk-surface2)}
+:root:root .vbtn{border-width:1px;font-weight:600}
+:root:root .hol-badge{font-weight:600}
+
+/* ---------- 12. Các bảng công cụ (quiz, ghi nhớ, code, viết...) ---------- */
+:root:root .trace-quiz-panel{border-radius:26px;box-shadow:var(--tr-lift)}
+:root:root .trace-quiz-head{padding:24px 26px 20px;background:var(--sk-surface)}
+:root:root .trace-quiz-head h3{font-size:1.35rem;letter-spacing:-.025em}
+:root:root .trace-quiz-kicker{text-transform:none;letter-spacing:0;font-size:.8rem;font-weight:700}
+:root:root .trace-quiz-btn{border-radius:14px;font-weight:700}
+:root:root .cr-card{border-radius:20px;box-shadow:none}
+:root:root .cr-card h4,:root:root .we-h{text-transform:none;letter-spacing:0;font-size:.88rem;font-weight:700;color:var(--sk-text)}
+:root:root .ia-table th,:root:root .tl-t th{text-transform:none;letter-spacing:0;font-weight:600}
+:root:root .ia-card,:root:root .ia-out{border-radius:20px}
+:root:root .ia-body input:focus,:root:root .ia-body select:focus,:root:root .ia-body textarea:focus,
+:root:root .tl-ta:focus,:root:root .tl-in:focus{border-color:var(--sk-accent);box-shadow:var(--tr-ring);outline:none}
+
+/* ---------- 13. Hộp thoại (chỉ phần không xung đột với bottom-sheet mobile) ---------- */
+:root:root #modal-overlay,:root:root #camera-overlay{background:rgba(10,12,32,.5)}
+:root:root .model-card{border-width:1.5px;border-radius:18px}
+@media(min-width:768px){
+  :root:root #api-modal .relative.bg-white,:root:root #camera-modal .relative.bg-white{border-radius:var(--tr-r-xl)}
+  :root:root .sk-panel{border-radius:var(--tr-r-xl)}
+  :root:root #acct-modal .ac-card{border-radius:24px}
+}
+:root:root .sk-card{border-radius:22px}
+
+/* ---------- 14. Chân trang ---------- */
+footer.py-4{padding:18px 0 26px;font-size:.8rem}
+
+@media(prefers-reduced-motion:reduce){
+  :root:root #ia-main button.on::before{animation:none}
+}
+</style>
+<style id="trace-gestures-css">
+/* ===== Trace AI · lớp cử chỉ (gestures) ===== */
+.gx-grab{display:none}
+@media (max-width:767px){
+  /* Các bảng chuyển thành bottom sheet bám đáy màn hình */
+  #api-modal>.overflow-y-auto,#camera-modal>.overflow-y-auto{padding:0!important;align-items:flex-start!important;overscroll-behavior:contain}
+  #api-modal .relative.bg-white.rounded-3xl,#camera-modal .relative.bg-white.rounded-3xl{margin:auto 0 0 0!important;max-width:none!important;width:100%;border-radius:24px 24px 0 0!important;padding-bottom:env(safe-area-inset-bottom,0px);will-change:transform}
+  html .sk-modal{align-items:flex-end;padding:0}
+  html .sk-panel{height:92dvh;max-height:92dvh;border-radius:24px 24px 0 0;padding-top:24px;overscroll-behavior:contain;will-change:transform}
+  /* Keyframe không được phép chạm vào phần tử mà cử chỉ điều khiển → dùng transition do JS đặt */
+  html .sk-modal:not([hidden]) .sk-panel{animation:none}
+  #acct-modal{align-items:flex-end;padding:0}
+  #acct-modal .ac-card{position:relative;max-width:none;max-height:92dvh;border-radius:24px 24px 0 0;padding:28px 18px calc(18px + env(safe-area-inset-bottom,0px));overscroll-behavior:contain;will-change:transform}
+  /* Tay nắm kéo: vùng chạm 30px nằm giữa, không đè lên nút đóng ở góc */
+  .gx-grab{display:block;position:absolute;top:0;left:30%;right:30%;height:30px;z-index:6;touch-action:none}
+  .gx-grab::before{content:"";position:absolute;top:8px;left:50%;width:40px;height:5px;margin-left:-20px;border-radius:99px;background:rgba(127,127,127,.55)}
+}
+#cal-grid{touch-action:pan-y;will-change:transform}
+/* Vùng chạm tối thiểu ~44px mà không đổi bố cục */
+@media (pointer:coarse){
+  .cal-navbtn,.sk-x,.ac-x,.pomo-btn,#camera-close{position:relative}
+  .cal-navbtn::before,.sk-x::before,.ac-x::before,.ac-eye::before,.pomo-btn::before,#camera-close::before{content:"";position:absolute;inset:-8px}
+}
+/* Không để hover giả kích hoạt khi chạm */
+@media (hover:none){
+  .vbtn:hover,.sk-btn:hover,.trace-quiz-btn:hover,.trace-prompt-chip:hover,.ia-sub:hover{transform:none}
+}
+</style>
+<script id="trace-gestures">
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var mqMobile = matchMedia('(max-width:767px)'), mqReduce = matchMedia('(prefers-reduced-motion: reduce)');
+  var ELASTIC = 0.2, EASE = 'cubic-bezier(.32,.72,0,1)';
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+  /* Lò xo tích phân số: kết thúc cử chỉ bằng vật lý, nhận vận tốc lúc nhả tay.
+     Trả về hàm hủy để có thể bắt lại giữa chừng. */
+  function spring(x, v, target, k, c, onFrame, done, early) {
+    var t0 = performance.now(), raf = 0, dead = false;
+    function step(now) {
+      if (dead) return;
+      var dt = Math.min((now - t0) / 1000, 1 / 30); t0 = now;
+      var n = Math.max(1, Math.ceil(dt / 0.004)), h = dt / n;
+      for (var i = 0; i < n; i++) { v += (-k * (x - target) - c * v) * h; x += v * h; }
+      onFrame(x);
+      if ((Math.abs(x - target) < 0.4 && Math.abs(v) < 8) || (early && early(x))) { onFrame(target); dead = true; done(); return; }
+      raf = requestAnimationFrame(step);
+    }
+    raf = requestAnimationFrame(step);
+    return function () { dead = true; cancelAnimationFrame(raf); };
+  }
+  function velocity(samples) { // px/s trong ~100ms cuối
+    var n = samples.length; if (n < 2) return 0;
+    var last = samples[n - 1], i = n - 1;
+    while (i > 0 && last[0] - samples[i - 1][0] < 100) i--;
+    var a = samples[i], dt = last[0] - a[0];
+    return dt > 0 ? (last[1] - a[1]) / dt * 1000 : 0;
+  }
+  function atTop(target, root) { // không kéo sheet nếu nội dung bên trong đang cuộn dở
+    for (var el = target; el && el !== document.body; el = el.parentElement) {
+      if (el.scrollHeight > el.clientHeight + 1 && /(auto|scroll)/.test(getComputedStyle(el).overflowY) && el.scrollTop > 0) return false;
+      if (el === root) break;
+    }
+    return true;
+  }
+
+  /* ---------- Bottom sheet: kéo xuống để đóng ---------- */
+  function sheet(cfg) {
+    var card = cfg.card, st = { y: 0, mode: 'idle', cancel: null, entering: false, et: 0, was: false, samples: [] };
+    var grab = document.createElement('div'); grab.className = 'gx-grab'; grab.setAttribute('aria-hidden', 'true');
+    card.insertBefore(grab, card.firstChild);
+
+    function setY(y) { st.y = y; card.style.transform = 'translate3d(0,' + y + 'px,0)'; cfg.fade(clamp(1 - Math.max(0, y) / (card.offsetHeight || 1), 0, 1), false); }
+    function clearAll() { card.style.transform = ''; card.style.transition = ''; cfg.fade(null); st.y = 0; }
+    function curY() { try { return new DOMMatrixReadOnly(getComputedStyle(card).transform).m42; } catch (e) { return st.y; } }
+    function stop() { if (st.cancel) { st.cancel(); st.cancel = null; } clearTimeout(st.et); }
+
+    function enter() {
+      if (!mqMobile.matches || mqReduce.matches) return;
+      stop();
+      var h = card.offsetHeight;
+      card.style.transition = 'none'; setY(h + 16); void card.offsetHeight;
+      card.style.transition = 'transform .5s ' + EASE; st.entering = true;
+      requestAnimationFrame(function () { setY(0); cfg.fade(1, true); });
+      st.et = setTimeout(function () { if (st.entering) { st.entering = false; clearAll(); } }, 560);
+    }
+    function freeze() { // bắt lại sheet đang bay giữa chừng
+      var was = st.entering; stop();
+      if (was) { var y = curY(); st.entering = false; card.style.transition = 'none'; setY(y); }
+    }
+    function doClose() {
+      cfg.close();
+      setTimeout(function () { if (cfg.isOpen()) clearAll(); }, 80);
+    }
+    function release(dismiss, v) {
+      var h = card.offsetHeight, target = dismiss ? h + 32 : 0;
+      if (mqReduce.matches) { // giảm chuyển động: chỉ đổi nhanh, không lò xo/nảy
+        card.style.transition = 'transform .15s ease-out'; setY(target); cfg.fade(dismiss ? 0 : 1, true);
+        st.et = setTimeout(function () { if (dismiss) doClose(); else clearAll(); }, 170);
+        return;
+      }
+      st.cancel = spring(st.y, v, target, dismiss ? 260 : 500, dismiss ? 38 : 40, setY,
+        function () { st.cancel = null; if (dismiss) doClose(); else clearAll(); },
+        dismiss ? function (y) { return y >= target - 1; } : null);
+    }
+
+    card.addEventListener('touchstart', function (e) {
+      if (!mqMobile.matches || !cfg.isOpen() || e.touches.length !== 1) { st.mode = 'ignore'; return; }
+      var t = e.touches[0];
+      st.x0 = t.clientX; st.y0 = t.clientY; st.samples = [[performance.now(), t.clientY]];
+      if (e.target.closest('input,textarea,select,video,canvas,[data-no-drag],[contenteditable="true"]')) { st.mode = 'ignore'; return; }
+      st.mode = 'pending';
+      if (st.cancel || st.entering) { freeze(); st.mode = 'drag'; st.base = t.clientY - st.y; }
+    }, { passive: true });
+
+    card.addEventListener('touchmove', function (e) {
+      if (st.mode === 'ignore' || st.mode === 'idle') return;
+      var t = e.touches[0], dy = t.clientY - st.y0, dx = t.clientX - st.x0;
+      if (st.mode === 'pending') {
+        if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) { st.mode = 'ignore'; return; }
+        if (dy < -6) { st.mode = 'ignore'; return; }
+        if (dy > 8) { if (atTop(e.target, cfg.modal)) { st.mode = 'drag'; st.base = t.clientY - st.y; card.style.transition = 'none'; } else { st.mode = 'ignore'; return; } }
+        else return;
+      }
+      if (e.cancelable) e.preventDefault();
+      var raw = t.clientY - st.base;
+      setY(raw < 0 ? raw * ELASTIC : raw); // 1:1 khi kéo xuống, có lực cản khi kéo ngược lên
+      st.samples.push([performance.now(), t.clientY]); if (st.samples.length > 12) st.samples.shift();
+    }, { passive: false });
+
+    function end(cancelled) {
+      if (st.mode === 'drag') {
+        var v = cancelled ? 0 : velocity(st.samples), h = card.offsetHeight;
+        // đóng khi kéo quá ~40% chiều cao HOẶC hất nhanh (>500px/s) sau khi đã kéo một đoạn
+        release(!cancelled && st.y > 8 && (st.y > h * 0.4 || v > 500), v);
+      }
+      st.mode = 'idle';
+    }
+    card.addEventListener('touchend', function () { end(false); }, { passive: true });
+    card.addEventListener('touchcancel', function () { end(true); }, { passive: true });
+
+    function sync() {
+      var o = cfg.isOpen();
+      if (o && !st.was) enter();
+      if (!o && st.was) { stop(); st.entering = false; st.mode = 'idle'; clearAll(); }
+      st.was = o;
+    }
+    new MutationObserver(sync).observe(cfg.modal, { attributes: true, attributeFilter: ['class', 'hidden'] });
+    sync();
+  }
+
+  function overlayFade(el) {
+    return function (p, anim) {
+      if (!el) return;
+      if (p == null) { el.style.opacity = ''; el.style.transition = ''; return; }
+      el.style.transition = anim ? 'opacity .5s ' + EASE : 'none'; el.style.opacity = p;
+    };
+  }
+  function init(id, cardSel, closeSel, openFn, overlaySel) {
+    var modal = $(id); if (!modal) return;
+    var card = modal.querySelector(cardSel), btn = modal.querySelector(closeSel) || $(closeSel.replace(/^#/, ''));
+    if (!card) return;
+    var ov = overlaySel ? (modal.querySelector(overlaySel) || null) : null;
+    sheet({
+      modal: modal, card: card, isOpen: openFn,
+      close: function () { var b = typeof closeSel === 'string' ? (document.querySelector(closeSel)) : null; if (b) b.click(); },
+      fade: ov ? overlayFade(ov) : function (p, anim) { // acct-modal: nền chính là chính nó
+        if (p == null) { modal.style.background = ''; modal.style.transition = ''; return; }
+        modal.style.transition = anim ? 'background .5s ' + EASE : 'none'; modal.style.background = 'rgba(15,23,42,' + (0.55 * p).toFixed(3) + ')';
+      }
+    });
+  }
+  init('api-modal', '.relative.bg-white', '#close-modal', function () { return !$('api-modal').classList.contains('hidden'); }, '#modal-overlay');
+  init('camera-modal', '.relative.bg-white', '#camera-close', function () { return !$('camera-modal').classList.contains('hidden'); }, '#camera-overlay');
+  init('sk-modal', '.sk-panel', '#sk-close', function () { return !$('sk-modal').hidden; }, '#sk-overlay');
+  init('acct-modal', '.ac-card', '#acct-close', function () { return $('acct-modal').classList.contains('open'); }, null);
+
+  /* ---------- Lịch: vuốt ngang để đổi tháng ---------- */
+  (function () {
+    var g = $('cal-grid'), prev = $('cal-prev'), next = $('cal-next'); if (!g || !prev || !next) return;
+    var s = null, cancel = null;
+    function setX(x) { g.style.transform = x ? 'translate3d(' + x + 'px,0,0)' : ''; g.style.opacity = x ? (1 - Math.min(0.5, Math.abs(x) / (g.offsetWidth * 1.2))).toFixed(3) : ''; }
+    g.addEventListener('touchstart', function (e) {
+      if (cancel) { cancel(); cancel = null; }
+      if (e.touches.length !== 1) { s = null; return; }
+      var t = e.touches[0]; g.style.transition = 'none';
+      var cur = 0; try { cur = new DOMMatrixReadOnly(getComputedStyle(g).transform).m41; } catch (x) {}
+      s = { x: t.clientX, y: t.clientY, m: 'p', dx: cur, base: cur, samples: [[performance.now(), t.clientX]] };
+    }, { passive: true });
+    g.addEventListener('touchmove', function (e) {
+      if (!s) return;
+      var t = e.touches[0], dx = t.clientX - s.x, dy = t.clientY - s.y;
+      if (s.m === 'p') {
+        if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { s = null; return; }
+        if (Math.abs(dx) > 8) { s.m = 'd'; s.x = t.clientX - s.base; dx = s.base; } else return;
+      } else dx = t.clientX - s.x;
+      s.dx = dx; setX(dx);
+      s.samples.push([performance.now(), t.clientX]); if (s.samples.length > 12) s.samples.shift();
+    }, { passive: true });
+    function finish() {
+      if (!s || s.m !== 'd') { s = null; return; }
+      var dx = s.dx, v = velocity(s.samples), w = g.offsetWidth || 300; s = null;
+      var go = Math.abs(dx) > w * 0.25 || Math.abs(v) > 400;
+      if (!go) { cancel = spring(dx, v, 0, 500, 40, setX, function () { cancel = null; setX(0); g.style.transition = ''; }); return; }
+      var dir = (dx < 0 || (Math.abs(dx) <= w * 0.25 && v < 0)) ? 1 : -1; // vuốt sang trái = tháng sau
+      if (mqReduce.matches) { (dir > 0 ? next : prev).click(); setX(0); g.style.transition = ''; return; }
+      g.style.transition = 'transform .16s ' + EASE + ',opacity .16s'; g.style.transform = 'translate3d(' + (-dir * w * 0.35) + 'px,0,0)'; g.style.opacity = '0';
+      setTimeout(function () {
+        (dir > 0 ? next : prev).click();
+        g.style.transition = 'none'; g.style.transform = 'translate3d(' + (dir * w * 0.35) + 'px,0,0)'; g.style.opacity = '0'; void g.offsetWidth;
+        g.style.transition = 'transform .3s ' + EASE + ',opacity .3s'; g.style.transform = ''; g.style.opacity = '';
+        setTimeout(function () { g.style.transition = ''; }, 320);
+      }, 170);
+    }
+    g.addEventListener('touchend', finish, { passive: true });
+    g.addEventListener('touchcancel', function () { if (s && s.m === 'd') { var dx = s.dx; s = null; cancel = spring(dx, 0, 0, 500, 40, setX, function () { cancel = null; setX(0); g.style.transition = ''; }); } else s = null; }, { passive: true });
+  })();
+})();
+</script>
+
 </body>
 </html>
